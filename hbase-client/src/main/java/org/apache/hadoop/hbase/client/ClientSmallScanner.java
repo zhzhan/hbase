@@ -48,44 +48,13 @@ import com.google.protobuf.ServiceException;
  * 
  * For small scan, it will get better performance than {@link ClientScanner}
  */
-@InterfaceAudience.Public
-@InterfaceStability.Evolving
+@InterfaceAudience.Private
 public class ClientSmallScanner extends ClientScanner {
   private final Log LOG = LogFactory.getLog(this.getClass());
   private ScannerCallableWithReplicas smallScanCallable = null;
   // When fetching results from server, skip the first result if it has the same
   // row with this one
   private byte[] skipRowOfFirstResult = null;
-
-  /**
-   * Create a new ClientSmallScanner for the specified table. An HConnection
-   * will be retrieved using the passed Configuration. Note that the passed
-   * {@link Scan} 's start row maybe changed.
-   * 
-   * @param conf The {@link Configuration} to use.
-   * @param scan {@link Scan} to use in this scanner
-   * @param tableName The table that we wish to rangeGet
-   * @throws IOException
-   */
-  public ClientSmallScanner(final Configuration conf, final Scan scan,
-      final TableName tableName) throws IOException {
-    this(conf, scan, tableName, ConnectionManager.getConnectionInternal(conf));
-  }
-
-  /**
-   * Create a new ClientSmallScanner for the specified table. An HConnection
-   * will be retrieved using the passed Configuration. Note that the passed
-   * {@link Scan} 's start row maybe changed.
-   * @param conf
-   * @param scan
-   * @param tableName
-   * @param connection
-   * @throws IOException
-   */
-  public ClientSmallScanner(final Configuration conf, final Scan scan,
-      final TableName tableName, ClusterConnection connection) throws IOException {
-    this(conf, scan, tableName, connection, new RpcRetryingCallerFactory(conf));
-  }
 
   /**
    * Create a new ClientSmallScanner for the specified table. Note that the passed
@@ -101,24 +70,8 @@ public class ClientSmallScanner extends ClientScanner {
   public ClientSmallScanner(final Configuration conf, final Scan scan,
       final TableName tableName, ClusterConnection connection, ExecutorService pool,
       int primaryOperationTimeout) throws IOException {
-    super(conf, scan, tableName, connection, pool, primaryOperationTimeout);
-  }
-
-  /**
-   * Create a new ShortClientScanner for the specified table Note that the
-   * passed {@link Scan}'s start row maybe changed changed.
-   * 
-   * @param conf The {@link Configuration} to use.
-   * @param scan {@link Scan} to use in this scanner
-   * @param tableName The table that we wish to rangeGet
-   * @param connection Connection identifying the cluster
-   * @param rpcFactory
-   * @throws IOException
-   */
-  public ClientSmallScanner(final Configuration conf, final Scan scan,
-      final TableName tableName, ClusterConnection connection,
-      RpcRetryingCallerFactory rpcFactory) throws IOException {
-    super(conf, scan, tableName, connection, rpcFactory);
+    super(conf, scan, tableName, connection, new RpcRetryingCallerFactory(conf), pool,
+           primaryOperationTimeout);
   }
 
   @Override
@@ -196,6 +149,7 @@ public class ClientSmallScanner extends ClientScanner {
 
     @Override
     public Result[] call() throws IOException {
+      if (this.closed) return null;
       if (Thread.interrupted()) {
         throw new InterruptedIOException();
       }
@@ -217,9 +171,6 @@ public class ClientSmallScanner extends ClientScanner {
     public ScannerCallable getScannerCallableForReplica(int id) {
       return new SmallScannerCallable(id, this.getCaching());
     }
-
-    @Override
-    public void setClose(){}
   }
 
   @Override
