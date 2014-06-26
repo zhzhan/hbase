@@ -110,6 +110,8 @@ public class ClientScanner extends AbstractClientScanner {
   public ClientScanner(final Configuration conf, final Scan scan, final TableName tableName,
       ClusterConnection connection, RpcRetryingCallerFactory rpcFactory, ExecutorService pool,
       int primaryOperationTimeout) throws IOException {
+    LOG.debug("Scan table=" + tableName
+        + ", startRow=" + Bytes.toStringBinary(scan.getStartRow()));   
       if (LOG.isTraceEnabled()) {
         LOG.trace("Scan table=" + tableName
             + ", startRow=" + Bytes.toStringBinary(scan.getStartRow()));

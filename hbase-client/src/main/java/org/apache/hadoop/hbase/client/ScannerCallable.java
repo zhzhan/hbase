@@ -115,7 +115,7 @@ public class ScannerCallable extends RegionServerCallable<Result[]> {
     this.scan = scan;
     this.scanMetrics = scanMetrics;
     Configuration conf = connection.getConfiguration();
-    logScannerActivity = conf.getBoolean(LOG_SCANNER_ACTIVITY, false);
+    logScannerActivity = conf.getBoolean(LOG_SCANNER_ACTIVITY, true);
     logCutOffLatency = conf.getInt(LOG_SCANNER_LATENCY_CUTOFF, 1000);
   }
 

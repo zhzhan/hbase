@@ -20,7 +20,10 @@ package org.apache.hadoop.hbase;
 
 import java.util.Collection;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.hbase.client.MetaCache;
 import org.apache.hadoop.hbase.util.Bytes;
 
 /**
@@ -181,7 +184,7 @@ public class RegionLocations {
 
     return new RegionLocations(newLocations);
   }
-
+  private static final Log LOG = LogFactory.getLog(RegionLocations.class);
   /**
    * Merges this RegionLocations list with the given list assuming
    * same range, and keeping the most up to date version of the
@@ -193,7 +196,7 @@ public class RegionLocations {
    */
   public RegionLocations mergeLocations(RegionLocations other) {
     assert other != null;
-
+LOG.debug("MERGELOCATIONS CALLED");
     HRegionLocation[] newLocations = null;
 
     // Use the length from other, since it is coming from meta. Otherwise,

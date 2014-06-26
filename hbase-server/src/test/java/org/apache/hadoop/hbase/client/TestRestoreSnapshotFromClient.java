@@ -158,7 +158,7 @@ public class TestRestoreSnapshotFromClient {
     admin.enableTable(tableName);
     SnapshotTestingUtils.verifyRowCount(TEST_UTIL, tableName, 0);
     SnapshotTestingUtils.verifyReplicasCameOnline(tableName, admin, getNumReplicas());
-
+assert(false);
     // Restore from snapshot-1
     admin.disableTable(tableName);
     admin.restoreSnapshot(snapshotName1);

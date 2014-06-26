@@ -1278,7 +1278,7 @@ class ConnectionManager {
             // so it won't interfere.
             metaCache.clearCache(tableName, row, replicaId);
           }
-
+          LOG.debug("Querying the meta region for " + Bytes.toString(metaKey));
           // Query the meta region for the location of the meta region
           regionInfoRow = ProtobufUtil.getRowOrBefore(service,
               metaLocation.getRegionInfo().getRegionName(), metaKey,
