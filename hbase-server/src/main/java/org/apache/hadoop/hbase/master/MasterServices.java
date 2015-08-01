@@ -34,6 +34,7 @@ import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.master.procedure.MasterProcedureEnv;
 import org.apache.hadoop.hbase.procedure2.ProcedureExecutor;
 import org.apache.hadoop.hbase.executor.ExecutorService;
+import org.apache.hadoop.hbase.group.GroupAdminServer;
 import org.apache.hadoop.hbase.quotas.MasterQuotaManager;
 
 import com.google.protobuf.Service;
@@ -334,4 +335,14 @@ public interface MasterServices extends Server {
    * @throws IOException
    */
   public long getLastMajorCompactionTimestampForRegion(byte[] regionName) throws IOException;
+
+  /**
+   * @return load balancer
+   */
+  public LoadBalancer getLoadBalancer();
+
+  /**
+   * @return load balancer
+   */
+  GroupAdminServer getGroupAdminServer();
 }

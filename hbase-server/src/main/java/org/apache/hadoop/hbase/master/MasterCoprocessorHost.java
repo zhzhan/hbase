@@ -21,6 +21,7 @@ package org.apache.hadoop.hbase.master;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang.ClassUtils;
 import org.apache.commons.logging.Log;
@@ -30,6 +31,7 @@ import org.apache.hadoop.hbase.Coprocessor;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.HostPort;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.TableName;
@@ -1101,4 +1103,116 @@ public class MasterCoprocessorHost
     }
     return bypass;
   }
+
+  public void preMoveServers(final Set<HostPort> servers, final String targetGroup)
+      throws IOException {
+    execOperation(coprocessors.isEmpty() ? null : new CoprocessorOperation() {
+      @Override
+      public void call(MasterObserver oserver,
+          ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
+        oserver.preMoveServers(ctx, servers, targetGroup);
+      }
+    });
+  }
+
+  public void postMoveServers(final Set<HostPort> servers, final String targetGroup)
+      throws IOException {
+    execOperation(coprocessors.isEmpty() ? null : new CoprocessorOperation() {
+      @Override
+      public void call(MasterObserver oserver,
+          ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
+        oserver.postMoveServers(ctx, servers, targetGroup);
+      }
+    });
+  }
+
+  public void preMoveTables(final Set<TableName> tables, final String targetGroup)
+      throws IOException {
+    execOperation(coprocessors.isEmpty() ? null : new CoprocessorOperation() {
+      @Override
+      public void call(MasterObserver oserver,
+          ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
+        oserver.preMoveTables(ctx, tables, targetGroup);
+      }
+    });
+  }
+
+  public void postMoveTables(final Set<TableName> tables, final String targetGroup)
+      throws IOException {
+    execOperation(coprocessors.isEmpty() ? null : new CoprocessorOperation() {
+      @Override
+      public void call(MasterObserver oserver,
+          ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
+        oserver.postMoveTables(ctx, tables, targetGroup);
+      }
+    });
+  }
+
+  public void preAddGroup(final String name)
+      throws IOException {
+    execOperation(coprocessors.isEmpty() ? null : new CoprocessorOperation() {
+      @Override
+      public void call(MasterObserver oserver,
+          ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
+        oserver.preAddGroup(ctx, name);
+      }
+    });
+  }
+
+  public void postAddGroup(final String name)
+      throws IOException {
+    execOperation(coprocessors.isEmpty() ? null : new CoprocessorOperation() {
+      @Override
+      public void call(MasterObserver oserver,
+          ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
+        oserver.postAddGroup(ctx, name);
+      }
+    });
+  }
+
+  public void preRemoveGroup(final String name)
+      throws IOException {
+    execOperation(coprocessors.isEmpty() ? null : new CoprocessorOperation() {
+      @Override
+      public void call(MasterObserver oserver,
+          ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
+        oserver.preRemoveGroup(ctx, name);
+      }
+    });
+  }
+
+  public void postRemoveGroup(final String name)
+      throws IOException {
+    execOperation(coprocessors.isEmpty() ? null : new CoprocessorOperation() {
+      @Override
+      public void call(MasterObserver oserver,
+          ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
+        oserver.postRemoveGroup(ctx, name);
+      }
+    });
+  }
+
+  public void preBalanceGroup(final String name)
+      throws IOException {
+    execOperation(coprocessors.isEmpty() ? null : new CoprocessorOperation() {
+      @Override
+      public void call(MasterObserver oserver,
+          ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
+        oserver.preBalanceGroup(ctx, name);
+      }
+    });
+  }
+
+  public void postBalanceGroup(final String name, final boolean balanceRan)
+      throws IOException {
+    execOperation(coprocessors.isEmpty() ? null : new CoprocessorOperation() {
+      @Override
+      public void call(MasterObserver oserver,
+          ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
+        oserver.postBalanceGroup(ctx, name, balanceRan);
+      }
+    });
+  }
+
+
 }

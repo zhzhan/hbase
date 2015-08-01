@@ -21,12 +21,14 @@ package org.apache.hadoop.hbase.coprocessor;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
 import org.apache.hadoop.hbase.HBaseInterfaceAudience;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.HostPort;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.TableName;
@@ -587,5 +589,55 @@ public class BaseMasterObserver implements MasterObserver {
   @Override
   public void postSetNamespaceQuota(final ObserverContext<MasterCoprocessorEnvironment> ctx,
       final String namespace, final Quotas quotas) throws IOException {
+  }
+
+  @Override
+  public void preMoveServers(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                             Set<HostPort> servers, String targetGroup) throws IOException {
+  }
+
+  @Override
+  public void postMoveServers(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                              Set<HostPort> servers, String targetGroup) throws IOException {
+  }
+
+  @Override
+  public void preMoveTables(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                            Set<TableName> tables, String targetGroup) throws IOException {
+  }
+
+  @Override
+  public void postMoveTables(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                             Set<TableName> tables, String targetGroup) throws IOException {
+  }
+
+  @Override
+  public void preAddGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                          String name) throws IOException {
+  }
+
+  @Override
+  public void postAddGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                           String name) throws IOException {
+  }
+
+  @Override
+  public void preRemoveGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                             String name) throws IOException {
+  }
+
+  @Override
+  public void postRemoveGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                              String name) throws IOException {
+  }
+
+  @Override
+  public void preBalanceGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                              String groupName) throws IOException {
+  }
+
+  @Override
+  public void postBalanceGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                               String groupName, boolean balancerRan) throws IOException {
   }
 }

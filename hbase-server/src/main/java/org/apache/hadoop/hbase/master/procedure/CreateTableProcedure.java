@@ -39,6 +39,8 @@ import org.apache.hadoop.hbase.TableExistsException;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.RegionReplicaUtil;
 import org.apache.hadoop.hbase.client.TableState;
+import org.apache.hadoop.hbase.group.GroupAdminServer;
+import org.apache.hadoop.hbase.group.GroupInfoManager;
 import org.apache.hadoop.hbase.master.AssignmentManager;
 import org.apache.hadoop.hbase.master.MasterCoprocessorHost;
 import org.apache.hadoop.hbase.master.MasterFileSystem;
@@ -292,7 +294,13 @@ public class CreateTableProcedure
       ProcedureSyncWait.getMasterQuotaManager(env)
         .checkNamespaceTableAndRegionQuota(getTableName(), newRegions.size());
     }
-
+    GroupAdminServer groupAdminServer = env.getMasterServices().getGroupAdminServer();
+    //If master is not initialized and a create table is spawned then it is
+    //a special table and group affilition should be taken care of explicitly
+    if (groupAdminServer != null &&
+        env.getMasterServices().isInitialized()) {
+      groupAdminServer.prepareGroupForTable(hTableDescriptor);
+    }
     final MasterCoprocessorHost cpHost = env.getMasterCoprocessorHost();
     if (cpHost != null) {
       final HRegionInfo[] regions = newRegions == null ? null :

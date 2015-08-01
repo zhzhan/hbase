@@ -237,3 +237,9 @@ message NamespaceDescriptor {
 message RegionServerInfo {
   optional int32 infoPort = 1;
 }
+
+message HostPort {
+  required string host_name = 1;
+  required uint32 port = 2;
+}
+

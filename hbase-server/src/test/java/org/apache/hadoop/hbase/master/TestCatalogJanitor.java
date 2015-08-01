@@ -60,6 +60,8 @@ import org.apache.hadoop.hbase.coordination.BaseCoordinatedStateManager;
 import org.apache.hadoop.hbase.coordination.SplitLogManagerCoordination;
 import org.apache.hadoop.hbase.coordination.SplitLogManagerCoordination.SplitLogManagerDetails;
 import org.apache.hadoop.hbase.executor.ExecutorService;
+import org.apache.hadoop.hbase.group.GroupAdmin;
+import org.apache.hadoop.hbase.group.GroupAdminServer;
 import org.apache.hadoop.hbase.io.Reference;
 import org.apache.hadoop.hbase.master.CatalogJanitor.SplitParentFirstComparator;
 import org.apache.hadoop.hbase.master.procedure.MasterProcedureEnv;
@@ -396,32 +398,29 @@ public class TestCatalogJanitor {
 
     @Override
     public void createNamespace(NamespaceDescriptor descriptor) throws IOException {
-      //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public void modifyNamespace(NamespaceDescriptor descriptor) throws IOException {
-      //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public void deleteNamespace(String name) throws IOException {
-      //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public NamespaceDescriptor getNamespaceDescriptor(String name) throws IOException {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
+      return null;
     }
 
     @Override
     public List<NamespaceDescriptor> listNamespaceDescriptors() throws IOException {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
+      return null;
     }
 
     @Override
     public List<HTableDescriptor> listTableDescriptorsByNamespace(String name) throws IOException {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
+      return null;
     }
 
     @Override
@@ -436,6 +435,9 @@ public class TestCatalogJanitor {
         final long nonce) throws IOException {
       return -1;
     }
+    public LoadBalancer getLoadBalancer() {
+      return null;
+    }
 
     @Override
     public long truncateTable(
@@ -444,6 +446,10 @@ public class TestCatalogJanitor {
         final long nonceGroup,
         final long nonce) throws IOException {
       return -1;
+    }
+
+    public GroupAdminServer getGroupAdminServer() {
+      return null;
     }
 
 

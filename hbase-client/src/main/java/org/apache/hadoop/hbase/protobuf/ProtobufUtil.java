@@ -38,6 +38,8 @@ import java.util.Map.Entry;
 import java.util.NavigableSet;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.hadoop.hbase.HostPort;
+import org.apache.hadoop.hbase.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.Cell;
@@ -69,6 +71,7 @@ import org.apache.hadoop.hbase.exceptions.DeserializationException;
 import org.apache.hadoop.hbase.filter.ByteArrayComparable;
 import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.io.LimitInputStream;
+import org.apache.hadoop.hbase.group.GroupInfo;
 import org.apache.hadoop.hbase.io.TimeRange;
 import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos;
 import org.apache.hadoop.hbase.protobuf.generated.AccessControlProtos.AccessControlService;
@@ -120,6 +123,7 @@ import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetTableDescripto
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MasterService;
 import org.apache.hadoop.hbase.protobuf.generated.QuotaProtos;
 import org.apache.hadoop.hbase.protobuf.generated.RPCProtos;
+import org.apache.hadoop.hbase.protobuf.generated.RSGroupProtos;
 import org.apache.hadoop.hbase.protobuf.generated.RegionServerStatusProtos.RegionServerReportRequest;
 import org.apache.hadoop.hbase.protobuf.generated.RegionServerStatusProtos.RegionServerStartupRequest;
 import org.apache.hadoop.hbase.protobuf.generated.WALProtos;
@@ -3057,5 +3061,35 @@ public final class ProtobufUtil {
     builder.setDate(VersionInfo.getDate());
     builder.setSrcChecksum(VersionInfo.getSrcChecksum());
     return builder.build();
+  }
+
+  public static GroupInfo toGroupInfo(RSGroupProtos.GroupInfo proto) {
+    GroupInfo groupInfo = new GroupInfo(proto.getName());
+    for(HBaseProtos.HostPort el: proto.getServersList()) {
+      groupInfo.addServer(new HostPort(el.getHostName(), el.getPort()));
+    }
+    for(HBaseProtos.TableName pTableName: proto.getTablesList()) {
+      groupInfo.addTable(ProtobufUtil.toTableName(pTableName));
+    }
+    return groupInfo;
+  }
+
+  public static RSGroupProtos.GroupInfo toProtoGroupInfo(GroupInfo pojo) {
+    List<HBaseProtos.TableName> tables =
+        new ArrayList<HBaseProtos.TableName>(pojo.getTables().size());
+    for(TableName arg: pojo.getTables()) {
+      tables.add(ProtobufUtil.toProtoTableName(arg));
+    }
+    List<HBaseProtos.HostPort> hostports =
+        new ArrayList<HBaseProtos.HostPort>(pojo.getServers().size());
+    for(HostPort el: pojo.getServers()) {
+      hostports.add(HBaseProtos.HostPort.newBuilder()
+          .setHostName(el.getHostname())
+          .setPort(el.getPort())
+          .build());
+    }
+    return RSGroupProtos.GroupInfo.newBuilder().setName(pojo.getName())
+        .addAllServers(hostports)
+        .addAllTables(tables).build();
   }
 }

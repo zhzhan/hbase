@@ -21,8 +21,11 @@ package org.apache.hadoop.hbase.master;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.DoNotRetryIOException;
@@ -30,6 +33,7 @@ import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.HostPort;
 import org.apache.hadoop.hbase.MetaTableAccessor;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.PleaseHoldException;
@@ -43,6 +47,7 @@ import org.apache.hadoop.hbase.errorhandling.ForeignException;
 import org.apache.hadoop.hbase.exceptions.MergeRegionException;
 import org.apache.hadoop.hbase.exceptions.UnknownProtocolException;
 import org.apache.hadoop.hbase.ipc.QosPriority;
+import org.apache.hadoop.hbase.group.GroupInfo;
 import org.apache.hadoop.hbase.ipc.RpcServer.BlockingServiceAndInterface;
 import org.apache.hadoop.hbase.ipc.ServerRpcController;
 import org.apache.hadoop.hbase.mob.MobUtils;
@@ -64,8 +69,12 @@ import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.RegionSpecifier.Re
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddColumnRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddColumnResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddGroupRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddGroupResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AssignRegionRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AssignRegionResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceGroupRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceGroupResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.CreateNamespaceRequest;
@@ -94,6 +103,12 @@ import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetClusterStatusR
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetClusterStatusResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetCompletedSnapshotsRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetCompletedSnapshotsResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfServerRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfServerResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfTableRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfTableResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetNamespaceDescriptorRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetNamespaceDescriptorResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetProcedureResultRequest;
@@ -116,6 +131,8 @@ import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsRestoreSnapshot
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsRestoreSnapshotDoneResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsSnapshotDoneRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsSnapshotDoneResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListGroupInfosRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListGroupInfosResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListNamespaceDescriptorsRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListNamespaceDescriptorsResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListTableDescriptorsByNamespaceRequest;
@@ -134,8 +151,14 @@ import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ModifyTableReques
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ModifyTableResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveRegionRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveRegionResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveServersRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveServersResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveTablesRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveTablesResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.OfflineRegionRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.OfflineRegionResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RemoveGroupRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RemoveGroupResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RestoreSnapshotRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RestoreSnapshotResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RunCatalogScanRequest;
@@ -270,8 +293,8 @@ public class MasterRpcServices extends RSRpcServices
       MasterService.newReflectiveBlockingService(this),
       MasterService.BlockingInterface.class));
     bssi.add(new BlockingServiceAndInterface(
-      RegionServerStatusService.newReflectiveBlockingService(this),
-      RegionServerStatusService.BlockingInterface.class));
+        RegionServerStatusService.newReflectiveBlockingService(this),
+        RegionServerStatusService.BlockingInterface.class));
     bssi.addAll(super.getServices());
     return bssi;
   }
@@ -355,10 +378,10 @@ public class MasterRpcServices extends RSRpcServices
       AddColumnRequest req) throws ServiceException {
     try {
       master.addColumn(
-        ProtobufUtil.toTableName(req.getTableName()),
-        HColumnDescriptor.convert(req.getColumnFamilies()),
-        req.getNonceGroup(),
-        req.getNonce());
+          ProtobufUtil.toTableName(req.getTableName()),
+          HColumnDescriptor.convert(req.getColumnFamilies()),
+          req.getNonceGroup(),
+          req.getNonce());
     } catch (IOException ioe) {
       throw new ServiceException(ioe);
     }
@@ -438,10 +461,10 @@ public class MasterRpcServices extends RSRpcServices
       DeleteColumnRequest req) throws ServiceException {
     try {
       master.deleteColumn(
-        ProtobufUtil.toTableName(req.getTableName()),
-        req.getColumnName().toByteArray(),
-        req.getNonceGroup(),
-        req.getNonce());
+          ProtobufUtil.toTableName(req.getTableName()),
+          req.getColumnName().toByteArray(),
+          req.getNonceGroup(),
+          req.getNonce());
     } catch (IOException ioe) {
       throw new ServiceException(ioe);
     }
@@ -691,7 +714,7 @@ public class MasterRpcServices extends RSRpcServices
       // to complete
       long waitTime = SnapshotDescriptionUtils.DEFAULT_MAX_WAIT_TIME;
       return ExecProcedureResponse.newBuilder().setExpectedTimeout(
-        waitTime).build();
+          waitTime).build();
     } catch (ForeignException e) {
       throw new ServiceException(e.getCause());
     } catch (IOException e) {
@@ -711,14 +734,14 @@ public class MasterRpcServices extends RSRpcServices
       master.checkInitialized();
       ProcedureDescription desc = request.getProcedure();
       MasterProcedureManager mpm = master.mpmHost.getProcedureManager(
-        desc.getSignature());
+          desc.getSignature());
       if (mpm == null) {
         throw new ServiceException("The procedure is not registered: "
           + desc.getSignature());
       }
 
       LOG.info(master.getClientIdAuditPrefix() + " procedure request for: "
-        + desc.getSignature());
+          + desc.getSignature());
 
       byte[] data = mpm.execProcedureWithRet(desc);
 
@@ -1092,10 +1115,10 @@ public class MasterRpcServices extends RSRpcServices
       ModifyColumnRequest req) throws ServiceException {
     try {
       master.modifyColumn(
-        ProtobufUtil.toTableName(req.getTableName()),
-        HColumnDescriptor.convert(req.getColumnFamilies()),
-        req.getNonceGroup(),
-        req.getNonce());
+          ProtobufUtil.toTableName(req.getTableName()),
+          HColumnDescriptor.convert(req.getColumnFamilies()),
+          req.getNonceGroup(),
+          req.getNonce());
     } catch (IOException ioe) {
       throw new ServiceException(ioe);
     }
@@ -1107,7 +1130,7 @@ public class MasterRpcServices extends RSRpcServices
       ModifyNamespaceRequest request) throws ServiceException {
     try {
       master.modifyNamespace(
-        ProtobufUtil.toNamespaceDescriptor(request.getNamespaceDescriptor()));
+          ProtobufUtil.toNamespaceDescriptor(request.getNamespaceDescriptor()));
       return ModifyNamespaceResponse.getDefaultInstance();
     } catch (IOException e) {
       throw new ServiceException(e);
@@ -1119,10 +1142,10 @@ public class MasterRpcServices extends RSRpcServices
       ModifyTableRequest req) throws ServiceException {
     try {
       master.modifyTable(
-        ProtobufUtil.toTableName(req.getTableName()),
-        HTableDescriptor.convert(req.getTableSchema()),
-        req.getNonceGroup(),
-        req.getNonce());
+          ProtobufUtil.toTableName(req.getTableName()),
+          HTableDescriptor.convert(req.getTableSchema()),
+          req.getNonceGroup(),
+          req.getNonce());
     } catch (IOException ioe) {
       throw new ServiceException(ioe);
     }
@@ -1504,5 +1527,150 @@ public class MasterRpcServices extends RSRpcServices
     IsBalancerEnabledResponse.Builder response = IsBalancerEnabledResponse.newBuilder();
     response.setEnabled(master.isBalancerOn());
     return response.build();
+  }
+
+  @Override
+  public GetGroupInfoResponse getGroupInfo(RpcController controller, GetGroupInfoRequest request) throws ServiceException {
+    MasterProtos.GetGroupInfoResponse response = null;
+    try {
+      MasterProtos.GetGroupInfoResponse.Builder builder =
+          MasterProtos.GetGroupInfoResponse.newBuilder();
+      GroupInfo groupInfo = master.getGroupAdminServer().getGroupInfo(request.getGroupName());
+      if(groupInfo != null) {
+        builder.setGroupInfo(ProtobufUtil.toProtoGroupInfo(groupInfo));
+      }
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public GetGroupInfoOfTableResponse getGroupInfoOfTable(RpcController controller,
+                                                                      GetGroupInfoOfTableRequest request) throws ServiceException {
+    MasterProtos.GetGroupInfoOfTableResponse response = null;
+    try {
+      MasterProtos.GetGroupInfoOfTableResponse.Builder builder =
+          MasterProtos.GetGroupInfoOfTableResponse.newBuilder();
+      GroupInfo groupInfo = master.getGroupAdminServer()
+          .getGroupInfoOfTable(ProtobufUtil.toTableName(request.getTableName()));
+      response = builder.setGroupInfo(ProtobufUtil.toProtoGroupInfo(groupInfo)).build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public MoveServersResponse moveServers(RpcController controller, MoveServersRequest request) throws ServiceException {
+    MasterProtos.MoveServersResponse response = null;
+    try {
+      MasterProtos.MoveServersResponse.Builder builder =
+          MasterProtos.MoveServersResponse.newBuilder();
+      Set<HostPort> hostPorts = Sets.newHashSet();
+      for(HBaseProtos.HostPort el: request.getServersList()) {
+        hostPorts.add(new HostPort(el.getHostName(), el.getPort()));
+      }
+      master.getGroupAdminServer()
+          .moveServers(hostPorts, request.getTargetGroup());
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public MoveTablesResponse moveTables(RpcController controller, MoveTablesRequest request) throws ServiceException {
+    MasterProtos.MoveTablesResponse response = null;
+    try {
+      MasterProtos.MoveTablesResponse.Builder builder =
+          MasterProtos.MoveTablesResponse.newBuilder();
+      Set<TableName> tables = new HashSet<TableName>(request.getTableNameList().size());
+      for(HBaseProtos.TableName tableName: request.getTableNameList()) {
+        tables.add(ProtobufUtil.toTableName(tableName));
+      }
+      master.getGroupAdminServer().moveTables(tables, request.getTargetGroup());
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public AddGroupResponse addGroup(RpcController controller, AddGroupRequest request) throws ServiceException {
+    MasterProtos.AddGroupResponse response = null;
+    try {
+      MasterProtos.AddGroupResponse.Builder builder =
+          MasterProtos.AddGroupResponse.newBuilder();
+      master.getGroupAdminServer().addGroup(request.getGroupName());
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public RemoveGroupResponse removeGroup(RpcController controller, RemoveGroupRequest request) throws ServiceException {
+    MasterProtos.RemoveGroupResponse response = null;
+    try {
+      MasterProtos.RemoveGroupResponse.Builder builder =
+          MasterProtos.RemoveGroupResponse.newBuilder();
+      master.getGroupAdminServer().removeGroup(request.getGroupName());
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public BalanceGroupResponse balanceGroup(RpcController controller, BalanceGroupRequest request) throws ServiceException {
+    MasterProtos.BalanceGroupResponse response = null;
+    try {
+      MasterProtos.BalanceGroupResponse.Builder builder =
+          MasterProtos.BalanceGroupResponse.newBuilder();
+      builder.setBalanceRan(master.getGroupAdminServer().balanceGroup(request.getGroupName()));
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public ListGroupInfosResponse listGroupInfos(RpcController controller,
+                                               ListGroupInfosRequest request) throws ServiceException {
+    MasterProtos.ListGroupInfosResponse response = null;
+    try {
+      MasterProtos.ListGroupInfosResponse.Builder builder =
+          MasterProtos.ListGroupInfosResponse.newBuilder();
+      for(GroupInfo groupInfo: master.getGroupAdminServer().listGroups()) {
+        builder.addGroupInfo(ProtobufUtil.toProtoGroupInfo(groupInfo));
+      }
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public GetGroupInfoOfServerResponse getGroupInfoOfServer(RpcController controller,
+                                                           GetGroupInfoOfServerRequest request) throws ServiceException {
+    MasterProtos.GetGroupInfoOfServerResponse response = null;
+    try {
+      MasterProtos.GetGroupInfoOfServerResponse.Builder builder =
+          MasterProtos.GetGroupInfoOfServerResponse.newBuilder();
+      GroupInfo groupInfo = master.getGroupAdminServer().getGroupOfServer(
+          new HostPort(request.getServer().getHostName(), request.getServer().getPort()));
+      response = builder.setGroupInfo(ProtobufUtil.toProtoGroupInfo(groupInfo)).build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
   }
 }

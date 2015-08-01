@@ -31,6 +31,7 @@ import "Client.proto";
 import "ClusterStatus.proto";
 import "ErrorHandling.proto";
 import "Quota.proto";
+import "RSGroup.proto";
 
 /* Column-level protobufs */
 
@@ -450,6 +451,92 @@ message MajorCompactionTimestampResponse {
   required int64 compaction_timestamp = 1;
 }
 
+/** Group level protobufs */
+
+message ListTablesOfGroupRequest {
+  required string group_name = 1;
+}
+
+message ListTablesOfGroupResponse {
+  repeated TableName table_name = 1;
+}
+
+message GetGroupInfoRequest {
+  required string group_name = 1;
+}
+
+message GetGroupInfoResponse {
+  optional GroupInfo group_info = 1;
+}
+
+message GetGroupInfoOfTableRequest {
+  required TableName table_name = 1;
+}
+
+message GetGroupInfoOfTableResponse {
+  optional GroupInfo group_info = 1;
+}
+
+message MoveServersRequest {
+  required string target_group = 1;
+  repeated HostPort servers = 2;
+}
+
+message MoveServersResponse {
+}
+
+message MoveTablesRequest {
+  required string target_group = 1;
+  repeated TableName table_name = 2;
+}
+
+message MoveTablesResponse {
+}
+
+message AddGroupRequest {
+  required string group_name = 1;
+}
+
+message AddGroupResponse {
+}
+
+message RemoveGroupRequest {
+  required string group_name = 1;
+}
+
+message RemoveGroupResponse {
+}
+
+message BalanceGroupRequest {
+  required string group_name = 1;
+}
+
+message BalanceGroupResponse {
+  required bool balanceRan = 1;
+}
+
+message ListGroupInfosRequest {
+}
+
+message ListGroupInfosResponse {
+  repeated GroupInfo  group_info = 1;
+}
+
+message GetGroupInfoOfServerRequest {
+  required HostPort server = 1;
+}
+
+message GetGroupInfoOfServerResponse {
+  optional GroupInfo group_info = 1;
+}
+
+message ListServersInTransitionRequest {
+}
+
+message ListServersInTransitionResponse {
+  repeated NameStringPair transitions = 1;
+}
+
 service MasterService {
   /** Used by the client to get the number of regions that have received the updated schema */
   rpc GetSchemaAlterStatus(GetSchemaAlterStatusRequest)
@@ -681,4 +768,31 @@ service MasterService {
 
   rpc getProcedureResult(GetProcedureResultRequest)
     returns(GetProcedureResultResponse);
+
+  rpc GetGroupInfo(GetGroupInfoRequest)
+    returns (GetGroupInfoResponse);
+
+  rpc GetGroupInfoOfTable(GetGroupInfoOfTableRequest)
+    returns (GetGroupInfoOfTableResponse);
+
+  rpc GetGroupInfoOfServer(GetGroupInfoOfServerRequest)
+    returns (GetGroupInfoOfServerResponse);
+
+  rpc MoveServers(MoveServersRequest)
+    returns (MoveServersResponse);
+
+  rpc MoveTables(MoveTablesRequest)
+    returns (MoveTablesResponse);
+
+  rpc AddGroup(AddGroupRequest)
+    returns (AddGroupResponse);
+
+  rpc RemoveGroup(RemoveGroupRequest)
+    returns (RemoveGroupResponse);
+
+  rpc BalanceGroup(BalanceGroupRequest)
+    returns (BalanceGroupResponse);
+
+  rpc ListGroupInfos(ListGroupInfosRequest)
+    returns (ListGroupInfosResponse);
 }

@@ -431,5 +431,9 @@ public class DeleteTableProcedure
     if (!tableName.isSystemTable()) {
       ProcedureSyncWait.getMasterQuotaManager(env).removeTableFromNamespaceQuota(tableName);
     }
+    if (env.getMasterServices().getGroupAdminServer() != null) {
+      LOG.debug("Removing " + tableName + " from group.");
+      env.getMasterServices().getGroupAdminServer().cleanupGroupForTable(tableName);
+    }
   }
 }

@@ -45,6 +45,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Maps;
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.Service;
+import com.google.common.collect.Lists;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -76,9 +81,13 @@ import org.apache.hadoop.hbase.classification.InterfaceAudience;
 import org.apache.hadoop.hbase.client.RegionReplicaUtil;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.TableState;
+import org.apache.hadoop.hbase.constraint.ConstraintException;
 import org.apache.hadoop.hbase.coprocessor.CoprocessorHost;
 import org.apache.hadoop.hbase.exceptions.DeserializationException;
 import org.apache.hadoop.hbase.executor.ExecutorType;
+import org.apache.hadoop.hbase.group.GroupAdminServer;
+import org.apache.hadoop.hbase.group.GroupInfo;
+import org.apache.hadoop.hbase.group.GroupableBalancer;
 import org.apache.hadoop.hbase.ipc.RpcServer;
 import org.apache.hadoop.hbase.ipc.ServerNotRunningYetException;
 import org.apache.hadoop.hbase.master.MasterRpcServices.BalanceSwitchMode;
@@ -322,6 +331,8 @@ public class HMaster extends HRegionServer implements MasterServices, Server {
 
   // handle table states
   private TableStateManager tableStateManager;
+
+  private GroupAdminServer groupAdminServer;
 
   /** flag used in test cases in order to simulate RS failures during master initialization */
   private volatile boolean initializationBeforeMetaAssignment = false;
@@ -716,6 +727,11 @@ public class HMaster extends HRegionServer implements MasterServices, Server {
     // Wait for regionserver to finish initialization.
     if (BaseLoadBalancer.tablesOnMaster(conf)) {
       waitForServerOnline();
+    }
+
+    if (balancer instanceof GroupableBalancer) {
+      groupAdminServer = new GroupAdminServer(this);
+      ((GroupableBalancer)balancer).setGroupInfoManager(groupAdminServer.getGroupInfoManager());
     }
 
     //initialize load balancer
@@ -1373,11 +1389,17 @@ public class HMaster extends HRegionServer implements MasterServices, Server {
       final byte[] destServerName) throws HBaseIOException {
     RegionState regionState = assignmentManager.getRegionStates().
       getRegionState(Bytes.toString(encodedRegionName));
-    if (regionState == null) {
+
+    HRegionInfo hri;
+    if (Bytes.toString(encodedRegionName)
+        .equals(HRegionInfo.FIRST_META_REGIONINFO.getEncodedName())) {
+      hri = HRegionInfo.FIRST_META_REGIONINFO;
+    } else if (regionState != null) {
+      hri = regionState.getRegion();
+    } else {
       throw new UnknownRegionException(Bytes.toStringBinary(encodedRegionName));
     }
 
-    HRegionInfo hri = regionState.getRegion();
     ServerName dest;
     if (destServerName == null || destServerName.length == 0) {
       LOG.info("Passed destination servername is null/empty so " +
@@ -1390,7 +1412,12 @@ public class HMaster extends HRegionServer implements MasterServices, Server {
         return;
       }
     } else {
-      dest = ServerName.valueOf(Bytes.toString(destServerName));
+      ServerName candidate = ServerName.valueOf(Bytes.toString(destServerName));
+      dest = balancer.randomAssignment(hri, Lists.newArrayList(candidate));
+      if (dest == null) {
+        LOG.debug("Unable to determine a plan to assign " + hri);
+        return;
+      }
       if (dest.equals(serverName) && balancer instanceof BaseLoadBalancer
           && !((BaseLoadBalancer)balancer).shouldBeOnMaster(hri)) {
         // To avoid unnecessary region moving later by balancer. Don't put user
@@ -1453,7 +1480,6 @@ public class HMaster extends HRegionServer implements MasterServices, Server {
     HRegionInfo[] newRegions = ModifyRegionUtils.createHRegionInfos(hTableDescriptor, splitKeys);
     checkInitialized();
     sanityCheckTableDescriptor(hTableDescriptor);
-
     if (cpHost != null) {
       cpHost.preCreateTable(hTableDescriptor, newRegions);
     }
@@ -1463,16 +1489,14 @@ public class HMaster extends HRegionServer implements MasterServices, Server {
     //       TableExistsException by saying if the schema is the same or not.
     ProcedurePrepareLatch latch = ProcedurePrepareLatch.createLatch();
     long procId = this.procedureExecutor.submitProcedure(
-      new CreateTableProcedure(
-        procedureExecutor.getEnvironment(), hTableDescriptor, newRegions, latch),
-      nonceGroup,
-      nonce);
+        new CreateTableProcedure(
+            procedureExecutor.getEnvironment(), hTableDescriptor, newRegions, latch),
+        nonceGroup,
+        nonce);
     latch.await();
-
     if (cpHost != null) {
       cpHost.postCreateTable(hTableDescriptor, newRegions);
     }
-
     return procId;
   }
 
@@ -2332,6 +2356,11 @@ public class HMaster extends HRegionServer implements MasterServices, Server {
   public void createNamespace(NamespaceDescriptor descriptor) throws IOException {
     TableName.isLegalNamespaceName(Bytes.toBytes(descriptor.getName()));
     checkNamespaceManagerReady();
+
+    String group =  descriptor.getConfigurationValue(GroupInfo.NAMESPACEDESC_PROP_GROUP);
+    if(group != null && groupAdminServer.getGroupInfo(group) == null) {
+      throw new ConstraintException("Region server group "+group+" does not exit");
+    }
     if (cpHost != null) {
       if (cpHost.preCreateNamespace(descriptor)) {
         return;
@@ -2348,6 +2377,11 @@ public class HMaster extends HRegionServer implements MasterServices, Server {
   public void modifyNamespace(NamespaceDescriptor descriptor) throws IOException {
     TableName.isLegalNamespaceName(Bytes.toBytes(descriptor.getName()));
     checkNamespaceManagerReady();
+
+    String group = descriptor.getConfigurationValue(GroupInfo.NAMESPACEDESC_PROP_GROUP);
+    if(group != null && groupAdminServer.getGroupInfo(group) == null) {
+      throw new ConstraintException("Region server group "+group+" does not exit");
+    }
     if (cpHost != null) {
       if (cpHost.preModifyNamespace(descriptor)) {
         return;
@@ -2666,5 +2700,15 @@ public class HMaster extends HRegionServer implements MasterServices, Server {
   public String getLoadBalancerClassName() {
     return conf.get(HConstants.HBASE_MASTER_LOADBALANCER_CLASS, LoadBalancerFactory
         .getDefaultLoadBalancerClass().getName());
+  }
+
+  @Override
+  public LoadBalancer getLoadBalancer() {
+    return balancer;
+  }
+
+  @Override
+  public GroupAdminServer getGroupAdminServer() {
+    return groupAdminServer;
   }
 }

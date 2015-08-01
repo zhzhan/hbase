@@ -32,6 +32,7 @@ import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.classification.InterfaceAudience;
 import org.apache.hadoop.hbase.client.backoff.ClientBackoffPolicy;
 import org.apache.hadoop.hbase.client.coprocessor.Batch.Callback;
+import org.apache.hadoop.hbase.group.GroupAdmin;
 import org.apache.hadoop.hbase.protobuf.generated.AdminProtos.AdminService;
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos.ClientService;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MasterService;
@@ -128,6 +129,11 @@ abstract class ConnectionAdapter implements ClusterConnection {
   @Override
   public Admin getAdmin() throws IOException {
     return wrappedConnection.getAdmin();
+  }
+
+  @Override
+  public GroupAdmin getGroupAdmin() throws IOException {
+    return wrappedConnection.getGroupAdmin();
   }
 
   @Override

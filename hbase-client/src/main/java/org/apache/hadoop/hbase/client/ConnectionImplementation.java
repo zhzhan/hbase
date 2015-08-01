@@ -46,6 +46,8 @@ import org.apache.hadoop.hbase.client.backoff.ClientBackoffPolicyFactory;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.exceptions.RegionMovedException;
 import org.apache.hadoop.hbase.exceptions.RegionOpeningException;
+import org.apache.hadoop.hbase.group.GroupAdmin;
+import org.apache.hadoop.hbase.group.GroupAdminClient;
 import org.apache.hadoop.hbase.ipc.RpcClient;
 import org.apache.hadoop.hbase.ipc.RpcClientFactory;
 import org.apache.hadoop.hbase.ipc.RpcControllerFactory;
@@ -54,8 +56,26 @@ import org.apache.hadoop.hbase.protobuf.RequestConverter;
 import org.apache.hadoop.hbase.protobuf.generated.AdminProtos;
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddGroupRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddGroupResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceGroupRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceGroupResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfServerRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfServerResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfTableRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfTableResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsBalancerEnabledRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsBalancerEnabledResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListGroupInfosRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListGroupInfosResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveServersRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveServersResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveTablesRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveTablesResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RemoveGroupRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RemoveGroupResponse;
 import org.apache.hadoop.hbase.quotas.ThrottlingException;
 import org.apache.hadoop.hbase.regionserver.RegionServerStoppedException;
 import org.apache.hadoop.hbase.security.User;
@@ -360,6 +380,11 @@ class ConnectionImplementation implements ClusterConnection, Closeable {
   @Override
   public Admin getAdmin() throws IOException {
     return new HBaseAdmin(this);
+  }
+
+  @Override
+  public GroupAdmin getGroupAdmin() throws IOException {
+    return new GroupAdminClient(conf);
   }
 
   private ExecutorService getBatchPool() {
@@ -1608,6 +1633,60 @@ class ConnectionImplementation implements ClusterConnection, Closeable {
       public MasterProtos.GetProcedureResultResponse getProcedureResult(RpcController controller,
           MasterProtos.GetProcedureResultRequest request) throws ServiceException {
         return stub.getProcedureResult(controller, request);
+      }
+
+      @Override
+      public GetGroupInfoResponse getGroupInfo(RpcController controller,
+          GetGroupInfoRequest request) throws ServiceException {
+        return stub.getGroupInfo(controller, request);
+      }
+
+      @Override
+      public GetGroupInfoOfTableResponse getGroupInfoOfTable(RpcController controller,
+          GetGroupInfoOfTableRequest request) throws ServiceException {
+        return stub.getGroupInfoOfTable(controller, request);
+      }
+
+      @Override
+      public GetGroupInfoOfServerResponse getGroupInfoOfServer(RpcController controller,
+          GetGroupInfoOfServerRequest request) throws ServiceException {
+        return stub.getGroupInfoOfServer(controller, request);
+      }
+
+      @Override
+      public MoveServersResponse moveServers(RpcController controller,
+          MoveServersRequest request) throws ServiceException {
+        return stub.moveServers(controller, request);
+      }
+
+      @Override
+      public MoveTablesResponse moveTables(RpcController controller,
+          MoveTablesRequest request) throws ServiceException {
+        return stub.moveTables(controller, request);
+      }
+
+      @Override
+      public AddGroupResponse addGroup(RpcController controller,
+          AddGroupRequest request) throws ServiceException {
+        return stub.addGroup(controller, request);
+      }
+
+      @Override
+      public RemoveGroupResponse removeGroup(RpcController controller,
+          RemoveGroupRequest request) throws ServiceException {
+        return stub.removeGroup(controller, request);
+      }
+
+      @Override
+      public BalanceGroupResponse balanceGroup(RpcController controller,
+          BalanceGroupRequest request) throws ServiceException {
+        return stub.balanceGroup(controller, request);
+      }
+
+      @Override
+      public ListGroupInfosResponse listGroupInfos(RpcController controller,
+          ListGroupInfosRequest request) throws ServiceException {
+        return stub.listGroupInfos(controller, request);
       }
 
       @Override
