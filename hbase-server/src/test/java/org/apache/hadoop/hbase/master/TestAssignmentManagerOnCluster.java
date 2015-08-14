@@ -26,10 +26,15 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -38,6 +43,7 @@ import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.testclassification.MediumTests;
 import org.apache.hadoop.hbase.MiniHBaseCluster;
 import org.apache.hadoop.hbase.MiniHBaseCluster.MiniHBaseClusterRegionServer;
@@ -149,7 +155,7 @@ public class TestAssignmentManagerOnCluster {
       TEST_UTIL.deleteTable(Bytes.toBytes(table));
     }
   }
-  
+
   // Simulate a scenario where the AssignCallable and SSH are trying to assign a region
   @Test (timeout=60000)
   public void testAssignRegionBySSH() throws Exception {
@@ -179,15 +185,15 @@ public class TestAssignmentManagerOnCluster {
       TEST_UTIL.getHBaseCluster().killRegionServer(controlledServer);
       TEST_UTIL.getHBaseCluster().waitForRegionServerToStop(controlledServer, -1);
       AssignmentManager am = master.getAssignmentManager();
-      
+
       // Simulate the AssignCallable trying to assign the region. Have the region in OFFLINE state,
-      // but not in transition and the server is the dead 'controlledServer'  
+      // but not in transition and the server is the dead 'controlledServer'
       regionStates.createRegionState(hri, State.OFFLINE, controlledServer);
       am.assign(hri, true, true);
       // Region should remain in OFFLINE and go to transition
       assertEquals(State.OFFLINE, regionStates.getRegionState(hri).getState());
       assertTrue (regionStates.isRegionInTransition(hri));
-      
+
       master.enableSSH(true);
       am.waitForAssignment(hri);
       assertTrue (regionStates.getRegionState(hri).isOpened());
@@ -211,7 +217,7 @@ public class TestAssignmentManagerOnCluster {
     TEST_UTIL.getMiniHBaseCluster().getConf().setInt("hbase.assignment.maximum.attempts", 20);
     TEST_UTIL.getMiniHBaseCluster().stopMaster(0);
     TEST_UTIL.getMiniHBaseCluster().startMaster(); //restart the master so that conf take into affect
-   
+
     ServerName deadServer = null;
     HMaster master = null;
     try {
@@ -451,7 +457,7 @@ public class TestAssignmentManagerOnCluster {
       assertTrue(am.waitForAssignment(hri));
       ServerName sn = am.getRegionStates().getRegionServerOfRegion(hri);
       TEST_UTIL.assertRegionOnServer(hri, sn, 6000);
-      
+
       MyRegionObserver.preCloseEnabled.set(true);
       am.unassign(hri);
       RegionState state = am.getRegionStates().getRegionState(hri);
@@ -566,6 +572,105 @@ public class TestAssignmentManagerOnCluster {
   }
 
   /**
+   * This tests round-robin assignment failed due to no bulkplan
+   */
+  @Test (timeout=60000)
+  public void testRoundRobinAssignmentFailed() throws Exception {
+    String table = "testRoundRobinAssignmentFailed";
+    try {
+      HTableDescriptor desc = new HTableDescriptor(TableName.valueOf(table));
+      desc.addFamily(new HColumnDescriptor(FAMILY));
+      admin.createTable(desc);
+
+      HTable meta = new HTable(conf, TableName.META_TABLE_NAME);
+      HRegionInfo hri = new HRegionInfo(
+        desc.getTableName(), Bytes.toBytes("A"), Bytes.toBytes("Z"));
+      MetaEditor.addRegionToMeta(meta, hri);
+
+      MyLoadBalancer.controledRegion = hri.getEncodedName();
+
+      HMaster master = TEST_UTIL.getHBaseCluster().getMaster();
+      AssignmentManager am = master.getAssignmentManager();
+      // round-robin assignment but balancer cannot find a plan
+      // assignment should fail
+      am.assign(Arrays.asList(hri));
+
+      // if bulk assignment cannot update region state to online
+      // or failed_open this waits until timeout
+      assertFalse(am.waitForAssignment(hri));
+      RegionState state = am.getRegionStates().getRegionState(hri);
+      assertEquals(RegionState.State.FAILED_OPEN, state.getState());
+      // Failed to open since no plan, so it's on no server
+      assertNull(state.getServerName());
+
+      // try again with valid plan
+      MyLoadBalancer.controledRegion = null;
+      am.assign(Arrays.asList(hri));
+      assertTrue(am.waitForAssignment(hri));
+
+      ServerName serverName = master.getAssignmentManager().
+        getRegionStates().getRegionServerOfRegion(hri);
+      TEST_UTIL.assertRegionOnServer(hri, serverName, 200);
+    } finally {
+      MyLoadBalancer.controledRegion = null;
+      TEST_UTIL.deleteTable(Bytes.toBytes(table));
+    }
+  }
+
+  /**
+   * This tests retain assignment failed due to no bulkplan
+   */
+  @Test (timeout=60000)
+  public void testRetainAssignmentFailed() throws Exception {
+    String table = "testRetainAssignmentFailed";
+    try {
+      HTableDescriptor desc = new HTableDescriptor(TableName.valueOf(table));
+      desc.addFamily(new HColumnDescriptor(FAMILY));
+      admin.createTable(desc);
+
+      HTable meta = new HTable(conf, TableName.META_TABLE_NAME);
+      HRegionInfo hri = new HRegionInfo(
+        desc.getTableName(), Bytes.toBytes("A"), Bytes.toBytes("Z"));
+      MetaEditor.addRegionToMeta(meta, hri);
+
+      MyLoadBalancer.controledRegion = hri.getEncodedName();
+
+      HMaster master = TEST_UTIL.getHBaseCluster().getMaster();
+      AssignmentManager am = master.getAssignmentManager();
+
+      Map<HRegionInfo, ServerName> regions = new HashMap<HRegionInfo, ServerName>();
+      ServerName dest = TEST_UTIL.getHBaseCluster().getRegionServer(0).getServerName();
+      regions.put(hri, dest);
+      // retainAssignment but balancer cannot find a plan
+      // assignment should fail
+      am.assign(regions);
+
+      // if retain assignment cannot update region state to online
+      // or failed_open this waits until timeout
+      assertFalse(am.waitForAssignment(hri));
+      RegionState state = am.getRegionStates().getRegionState(hri);
+      assertEquals(RegionState.State.FAILED_OPEN, state.getState());
+      // Failed to open since no plan, so it's on no server
+      assertNull(state.getServerName());
+
+      // try retainAssigment again with valid plan
+      MyLoadBalancer.controledRegion = null;
+      am.assign(regions);
+      assertTrue(am.waitForAssignment(hri));
+
+      ServerName serverName = master.getAssignmentManager().
+        getRegionStates().getRegionServerOfRegion(hri);
+      TEST_UTIL.assertRegionOnServer(hri, serverName, 200);
+
+      // it retains on same server as specified
+      assertEquals(serverName, dest);
+    } finally {
+      MyLoadBalancer.controledRegion = null;
+      TEST_UTIL.deleteTable(Bytes.toBytes(table));
+    }
+  }
+
+  /**
    * This tests region open failure which is not recoverable
    */
   @Test (timeout=60000)
@@ -646,7 +751,7 @@ public class TestAssignmentManagerOnCluster {
               Bytes.toBytes(rs.getServerName().getServerName()));
         am.waitForAssignment(HRegionInfo.FIRST_META_REGIONINFO);
       }
-      
+
       am.regionOffline(hri);
       ZooKeeperWatcher zkw = TEST_UTIL.getHBaseCluster().getMaster().getZooKeeper();
       am.getRegionStates().updateRegionState(hri, State.PENDING_OPEN, destServerName);
@@ -787,7 +892,7 @@ public class TestAssignmentManagerOnCluster {
       List<HRegionInfo> regions = new ArrayList<HRegionInfo>();
       regions.add(hri);
       am.assign(destServerName, regions);
-      
+
       // let region open continue
       MyRegionObserver.postOpenEnabled.set(false);
 
@@ -1017,6 +1122,31 @@ public class TestAssignmentManagerOnCluster {
     // For this region, if specified, always assign to nowhere
     static volatile String controledRegion = null;
 
+
+    @Override
+    public Map<ServerName, List<HRegionInfo>> roundRobinAssignment(
+        List<HRegionInfo> regions, List<ServerName> servers) {
+      if (regions.get(0).getEncodedName().equals(controledRegion)) {
+        Map<ServerName, List<HRegionInfo>> m = Maps.newHashMap();
+        m.put(LoadBalancer.BOGUS_SERVER_NAME, regions);
+        return m;
+      }
+      return super.roundRobinAssignment(regions, servers);
+    }
+
+    @Override
+    public Map<ServerName, List<HRegionInfo>> retainAssignment(
+        Map<HRegionInfo, ServerName> regions, List<ServerName> servers) {
+      for (HRegionInfo hri : regions.keySet()) {
+        if (hri.getEncodedName().equals(controledRegion)) {
+          Map<ServerName, List<HRegionInfo>> m = Maps.newHashMap();
+          m.put(LoadBalancer.BOGUS_SERVER_NAME, Lists.newArrayList(regions.keySet()));
+          return m;
+        }
+      }
+      return super.retainAssignment(regions, servers);
+    }
+
     @Override
     public ServerName randomAssignment(HRegionInfo regionInfo,
         List<ServerName> servers) {
@@ -1047,7 +1177,7 @@ public class TestAssignmentManagerOnCluster {
       }
     }
   }
-  
+
   public static class MyRegionServer extends MiniHBaseClusterRegionServer {
     static volatile ServerName abortedServer = null;
     static volatile boolean simulateRetry;

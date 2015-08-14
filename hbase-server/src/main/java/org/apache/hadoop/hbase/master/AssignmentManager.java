@@ -2113,7 +2113,7 @@ public class AssignmentManager extends ZooKeeperListener {
           }
         }
         LOG.info("Assigning " + region.getRegionNameAsString() +
-            " to " + plan.getDestination().toString());
+            " to " + plan.getDestination());
         // Transition RegionState to PENDING_OPEN
         currentState = regionStates.updateRegionState(region,
           State.PENDING_OPEN, plan.getDestination());
@@ -2402,8 +2402,13 @@ public class AssignmentManager extends ZooKeeperListener {
           || existingPlan.getDestination() == null
           || !destServers.contains(existingPlan.getDestination())) {
         newPlan = true;
-        randomPlan = new RegionPlan(region, null,
-            balancer.randomAssignment(region, destServers));
+        try {
+          randomPlan = new RegionPlan(region, null, 
+              balancer.randomAssignment(region, destServers));
+        } catch (IOException ex) {
+          LOG.warn("Failed to create new plan.",ex);
+          return null;
+        }
         if (!region.isMetaTable() && shouldAssignRegionsWithFavoredNodes) {
           List<HRegionInfo> regions = new ArrayList<HRegionInfo>(1);
           regions.add(region);
@@ -2690,6 +2695,19 @@ public class AssignmentManager extends ZooKeeperListener {
     Map<ServerName, List<HRegionInfo>> bulkPlan =
       balancer.retainAssignment(regions, servers);
 
+    if (bulkPlan.containsKey(LoadBalancer.BOGUS_SERVER_NAME)) {
+      // Found no plan for some regions, put those regions in RIT
+      for (HRegionInfo hri : bulkPlan.get(LoadBalancer.BOGUS_SERVER_NAME)) {
+        if (tomActivated) {
+          // Set to offline so that tom will handle it
+          regionStates.updateRegionState(hri, State.OFFLINE);
+        } else {
+          regionStates.updateRegionState(hri, State.FAILED_OPEN);
+        }      
+      }
+      bulkPlan.remove(LoadBalancer.BOGUS_SERVER_NAME);
+    }
+
     assign(regions.size(), servers.size(),
       "retainAssignment=true", bulkPlan);
   }
@@ -2716,6 +2734,20 @@ public class AssignmentManager extends ZooKeeperListener {
     // Generate a round-robin bulk assignment plan
     Map<ServerName, List<HRegionInfo>> bulkPlan
       = balancer.roundRobinAssignment(regions, servers);
+
+    if (bulkPlan.containsKey(LoadBalancer.BOGUS_SERVER_NAME)) {
+      // Found no plan for some regions, put those regions in RIT
+      for (HRegionInfo hri : bulkPlan.get(LoadBalancer.BOGUS_SERVER_NAME)) {
+        if (tomActivated) {
+          // Set to offline so that tom will handle it
+          regionStates.updateRegionState(hri, State.OFFLINE);
+        } else {
+          regionStates.updateRegionState(hri, State.FAILED_OPEN);
+        }
+      }
+      bulkPlan.remove(LoadBalancer.BOGUS_SERVER_NAME);
+    }
+
     processFavoredNodes(regions);
 
     assign(regions.size(), servers.size(),

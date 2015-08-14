@@ -139,6 +139,621 @@ public final class HBaseProtos {
     // @@protoc_insertion_point(enum_scope:CompareType)
   }
 
+  public interface HostPortOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required string host_name = 1;
+    /**
+     * <code>required string host_name = 1;</code>
+     */
+    boolean hasHostName();
+    /**
+     * <code>required string host_name = 1;</code>
+     */
+    java.lang.String getHostName();
+    /**
+     * <code>required string host_name = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getHostNameBytes();
+
+    // required uint32 port = 2;
+    /**
+     * <code>required uint32 port = 2;</code>
+     */
+    boolean hasPort();
+    /**
+     * <code>required uint32 port = 2;</code>
+     */
+    int getPort();
+  }
+  /**
+   * Protobuf type {@code HostPort}
+   */
+  public static final class HostPort extends
+      com.google.protobuf.GeneratedMessage
+      implements HostPortOrBuilder {
+    // Use HostPort.newBuilder() to construct.
+    private HostPort(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private HostPort(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final HostPort defaultInstance;
+    public static HostPort getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public HostPort getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private HostPort(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              hostName_ = input.readBytes();
+              break;
+            }
+            case 16: {
+              bitField0_ |= 0x00000002;
+              port_ = input.readUInt32();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.internal_static_HostPort_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.internal_static_HostPort_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort.class, org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<HostPort> PARSER =
+        new com.google.protobuf.AbstractParser<HostPort>() {
+      public HostPort parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new HostPort(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<HostPort> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required string host_name = 1;
+    public static final int HOST_NAME_FIELD_NUMBER = 1;
+    private java.lang.Object hostName_;
+    /**
+     * <code>required string host_name = 1;</code>
+     */
+    public boolean hasHostName() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required string host_name = 1;</code>
+     */
+    public java.lang.String getHostName() {
+      java.lang.Object ref = hostName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          hostName_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string host_name = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getHostNameBytes() {
+      java.lang.Object ref = hostName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        hostName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required uint32 port = 2;
+    public static final int PORT_FIELD_NUMBER = 2;
+    private int port_;
+    /**
+     * <code>required uint32 port = 2;</code>
+     */
+    public boolean hasPort() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required uint32 port = 2;</code>
+     */
+    public int getPort() {
+      return port_;
+    }
+
+    private void initFields() {
+      hostName_ = "";
+      port_ = 0;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasHostName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPort()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getHostNameBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeUInt32(2, port_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, getHostNameBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(2, port_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort)) {
+        return super.equals(obj);
+      }
+      org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort other = (org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort) obj;
+
+      boolean result = true;
+      result = result && (hasHostName() == other.hasHostName());
+      if (hasHostName()) {
+        result = result && getHostName()
+            .equals(other.getHostName());
+      }
+      result = result && (hasPort() == other.hasPort());
+      if (hasPort()) {
+        result = result && (getPort()
+            == other.getPort());
+      }
+      result = result &&
+          getUnknownFields().equals(other.getUnknownFields());
+      return result;
+    }
+
+    private int memoizedHashCode = 0;
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptorForType().hashCode();
+      if (hasHostName()) {
+        hash = (37 * hash) + HOST_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getHostName().hashCode();
+      }
+      if (hasPort()) {
+        hash = (37 * hash) + PORT_FIELD_NUMBER;
+        hash = (53 * hash) + getPort();
+      }
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code HostPort}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPortOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.internal_static_HostPort_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.internal_static_HostPort_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort.class, org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort.Builder.class);
+      }
+
+      // Construct using org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        hostName_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        port_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.internal_static_HostPort_descriptor;
+      }
+
+      public org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort getDefaultInstanceForType() {
+        return org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort.getDefaultInstance();
+      }
+
+      public org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort build() {
+        org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort buildPartial() {
+        org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort result = new org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.hostName_ = hostName_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.port_ = port_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort) {
+          return mergeFrom((org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort other) {
+        if (other == org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort.getDefaultInstance()) return this;
+        if (other.hasHostName()) {
+          bitField0_ |= 0x00000001;
+          hostName_ = other.hostName_;
+          onChanged();
+        }
+        if (other.hasPort()) {
+          setPort(other.getPort());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasHostName()) {
+          
+          return false;
+        }
+        if (!hasPort()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.HostPort) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required string host_name = 1;
+      private java.lang.Object hostName_ = "";
+      /**
+       * <code>required string host_name = 1;</code>
+       */
+      public boolean hasHostName() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required string host_name = 1;</code>
+       */
+      public java.lang.String getHostName() {
+        java.lang.Object ref = hostName_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          hostName_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string host_name = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getHostNameBytes() {
+        java.lang.Object ref = hostName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          hostName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string host_name = 1;</code>
+       */
+      public Builder setHostName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        hostName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string host_name = 1;</code>
+       */
+      public Builder clearHostName() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        hostName_ = getDefaultInstance().getHostName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string host_name = 1;</code>
+       */
+      public Builder setHostNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        hostName_ = value;
+        onChanged();
+        return this;
+      }
+
+      // required uint32 port = 2;
+      private int port_ ;
+      /**
+       * <code>required uint32 port = 2;</code>
+       */
+      public boolean hasPort() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required uint32 port = 2;</code>
+       */
+      public int getPort() {
+        return port_;
+      }
+      /**
+       * <code>required uint32 port = 2;</code>
+       */
+      public Builder setPort(int value) {
+        bitField0_ |= 0x00000002;
+        port_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required uint32 port = 2;</code>
+       */
+      public Builder clearPort() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        port_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:HostPort)
+    }
+
+    static {
+      defaultInstance = new HostPort(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:HostPort)
+  }
+
   public interface TableNameOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
@@ -16107,6 +16722,11 @@ public final class HBaseProtos {
   }
 
   private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_HostPort_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_HostPort_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_TableName_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -16225,186 +16845,193 @@ public final class HBaseProtos {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\013HBase.proto\032\nCell.proto\"1\n\tTableName\022\021" +
-      "\n\tnamespace\030\001 \002(\014\022\021\n\tqualifier\030\002 \002(\014\"\250\001\n" +
-      "\013TableSchema\022\036\n\ntable_name\030\001 \001(\0132\n.Table" +
-      "Name\022#\n\nattributes\030\002 \003(\0132\017.BytesBytesPai" +
-      "r\022,\n\017column_families\030\003 \003(\0132\023.ColumnFamil" +
-      "ySchema\022&\n\rconfiguration\030\004 \003(\0132\017.NameStr" +
-      "ingPair\"o\n\022ColumnFamilySchema\022\014\n\004name\030\001 " +
-      "\002(\014\022#\n\nattributes\030\002 \003(\0132\017.BytesBytesPair" +
-      "\022&\n\rconfiguration\030\003 \003(\0132\017.NameStringPair" +
-      "\"\203\001\n\nRegionInfo\022\021\n\tregion_id\030\001 \002(\004\022\036\n\nta",
-      "ble_name\030\002 \002(\0132\n.TableName\022\021\n\tstart_key\030" +
-      "\003 \001(\014\022\017\n\007end_key\030\004 \001(\014\022\017\n\007offline\030\005 \001(\010\022" +
-      "\r\n\005split\030\006 \001(\010\"1\n\014FavoredNodes\022!\n\014favore" +
-      "d_node\030\001 \003(\0132\013.ServerName\"\225\001\n\017RegionSpec" +
-      "ifier\0222\n\004type\030\001 \002(\0162$.RegionSpecifier.Re" +
-      "gionSpecifierType\022\r\n\005value\030\002 \002(\014\"?\n\023Regi" +
-      "onSpecifierType\022\017\n\013REGION_NAME\020\001\022\027\n\023ENCO" +
-      "DED_REGION_NAME\020\002\"%\n\tTimeRange\022\014\n\004from\030\001" +
-      " \001(\004\022\n\n\002to\030\002 \001(\004\"A\n\nServerName\022\021\n\thost_n" +
-      "ame\030\001 \002(\t\022\014\n\004port\030\002 \001(\r\022\022\n\nstart_code\030\003 ",
-      "\001(\004\"\033\n\013Coprocessor\022\014\n\004name\030\001 \002(\t\"-\n\016Name" +
-      "StringPair\022\014\n\004name\030\001 \002(\t\022\r\n\005value\030\002 \002(\t\"" +
-      ",\n\rNameBytesPair\022\014\n\004name\030\001 \002(\t\022\r\n\005value\030" +
-      "\002 \001(\014\"/\n\016BytesBytesPair\022\r\n\005first\030\001 \002(\014\022\016" +
-      "\n\006second\030\002 \002(\014\",\n\rNameInt64Pair\022\014\n\004name\030" +
-      "\001 \001(\t\022\r\n\005value\030\002 \001(\003\"\275\001\n\023SnapshotDescrip" +
-      "tion\022\014\n\004name\030\001 \002(\t\022\r\n\005table\030\002 \001(\t\022\030\n\rcre" +
-      "ation_time\030\003 \001(\003:\0010\022.\n\004type\030\004 \001(\0162\031.Snap" +
-      "shotDescription.Type:\005FLUSH\022\017\n\007version\030\005" +
-      " \001(\005\".\n\004Type\022\014\n\010DISABLED\020\000\022\t\n\005FLUSH\020\001\022\r\n",
-      "\tSKIPFLUSH\020\002\"}\n\024ProcedureDescription\022\021\n\t" +
-      "signature\030\001 \002(\t\022\020\n\010instance\030\002 \001(\t\022\030\n\rcre" +
-      "ation_time\030\003 \001(\003:\0010\022&\n\rconfiguration\030\004 \003" +
-      "(\0132\017.NameStringPair\"\n\n\010EmptyMsg\"\033\n\007LongM" +
-      "sg\022\020\n\010long_msg\030\001 \002(\003\"\037\n\tDoubleMsg\022\022\n\ndou" +
-      "ble_msg\030\001 \002(\001\"\'\n\rBigDecimalMsg\022\026\n\016bigdec" +
-      "imal_msg\030\001 \002(\014\"5\n\004UUID\022\026\n\016least_sig_bits" +
-      "\030\001 \002(\004\022\025\n\rmost_sig_bits\030\002 \002(\004\"K\n\023Namespa" +
-      "ceDescriptor\022\014\n\004name\030\001 \002(\014\022&\n\rconfigurat" +
-      "ion\030\002 \003(\0132\017.NameStringPair\"$\n\020RegionServ",
-      "erInfo\022\020\n\010infoPort\030\001 \001(\005*r\n\013CompareType\022" +
-      "\010\n\004LESS\020\000\022\021\n\rLESS_OR_EQUAL\020\001\022\t\n\005EQUAL\020\002\022" +
-      "\r\n\tNOT_EQUAL\020\003\022\024\n\020GREATER_OR_EQUAL\020\004\022\013\n\007" +
-      "GREATER\020\005\022\t\n\005NO_OP\020\006B>\n*org.apache.hadoo" +
-      "p.hbase.protobuf.generatedB\013HBaseProtosH" +
-      "\001\240\001\001"
+      "\n\013HBase.proto\032\nCell.proto\"+\n\010HostPort\022\021\n" +
+      "\thost_name\030\001 \002(\t\022\014\n\004port\030\002 \002(\r\"1\n\tTableN" +
+      "ame\022\021\n\tnamespace\030\001 \002(\014\022\021\n\tqualifier\030\002 \002(" +
+      "\014\"\250\001\n\013TableSchema\022\036\n\ntable_name\030\001 \001(\0132\n." +
+      "TableName\022#\n\nattributes\030\002 \003(\0132\017.BytesByt" +
+      "esPair\022,\n\017column_families\030\003 \003(\0132\023.Column" +
+      "FamilySchema\022&\n\rconfiguration\030\004 \003(\0132\017.Na" +
+      "meStringPair\"o\n\022ColumnFamilySchema\022\014\n\004na" +
+      "me\030\001 \002(\014\022#\n\nattributes\030\002 \003(\0132\017.BytesByte" +
+      "sPair\022&\n\rconfiguration\030\003 \003(\0132\017.NameStrin",
+      "gPair\"\203\001\n\nRegionInfo\022\021\n\tregion_id\030\001 \002(\004\022" +
+      "\036\n\ntable_name\030\002 \002(\0132\n.TableName\022\021\n\tstart" +
+      "_key\030\003 \001(\014\022\017\n\007end_key\030\004 \001(\014\022\017\n\007offline\030\005" +
+      " \001(\010\022\r\n\005split\030\006 \001(\010\"1\n\014FavoredNodes\022!\n\014f" +
+      "avored_node\030\001 \003(\0132\013.ServerName\"\225\001\n\017Regio" +
+      "nSpecifier\0222\n\004type\030\001 \002(\0162$.RegionSpecifi" +
+      "er.RegionSpecifierType\022\r\n\005value\030\002 \002(\014\"?\n" +
+      "\023RegionSpecifierType\022\017\n\013REGION_NAME\020\001\022\027\n" +
+      "\023ENCODED_REGION_NAME\020\002\"%\n\tTimeRange\022\014\n\004f" +
+      "rom\030\001 \001(\004\022\n\n\002to\030\002 \001(\004\"A\n\nServerName\022\021\n\th",
+      "ost_name\030\001 \002(\t\022\014\n\004port\030\002 \001(\r\022\022\n\nstart_co" +
+      "de\030\003 \001(\004\"\033\n\013Coprocessor\022\014\n\004name\030\001 \002(\t\"-\n" +
+      "\016NameStringPair\022\014\n\004name\030\001 \002(\t\022\r\n\005value\030\002" +
+      " \002(\t\",\n\rNameBytesPair\022\014\n\004name\030\001 \002(\t\022\r\n\005v" +
+      "alue\030\002 \001(\014\"/\n\016BytesBytesPair\022\r\n\005first\030\001 " +
+      "\002(\014\022\016\n\006second\030\002 \002(\014\",\n\rNameInt64Pair\022\014\n\004" +
+      "name\030\001 \001(\t\022\r\n\005value\030\002 \001(\003\"\275\001\n\023SnapshotDe" +
+      "scription\022\014\n\004name\030\001 \002(\t\022\r\n\005table\030\002 \001(\t\022\030" +
+      "\n\rcreation_time\030\003 \001(\003:\0010\022.\n\004type\030\004 \001(\0162\031" +
+      ".SnapshotDescription.Type:\005FLUSH\022\017\n\007vers",
+      "ion\030\005 \001(\005\".\n\004Type\022\014\n\010DISABLED\020\000\022\t\n\005FLUSH" +
+      "\020\001\022\r\n\tSKIPFLUSH\020\002\"}\n\024ProcedureDescriptio" +
+      "n\022\021\n\tsignature\030\001 \002(\t\022\020\n\010instance\030\002 \001(\t\022\030" +
+      "\n\rcreation_time\030\003 \001(\003:\0010\022&\n\rconfiguratio" +
+      "n\030\004 \003(\0132\017.NameStringPair\"\n\n\010EmptyMsg\"\033\n\007" +
+      "LongMsg\022\020\n\010long_msg\030\001 \002(\003\"\037\n\tDoubleMsg\022\022" +
+      "\n\ndouble_msg\030\001 \002(\001\"\'\n\rBigDecimalMsg\022\026\n\016b" +
+      "igdecimal_msg\030\001 \002(\014\"5\n\004UUID\022\026\n\016least_sig" +
+      "_bits\030\001 \002(\004\022\025\n\rmost_sig_bits\030\002 \002(\004\"K\n\023Na" +
+      "mespaceDescriptor\022\014\n\004name\030\001 \002(\014\022&\n\rconfi",
+      "guration\030\002 \003(\0132\017.NameStringPair\"$\n\020Regio" +
+      "nServerInfo\022\020\n\010infoPort\030\001 \001(\005*r\n\013Compare" +
+      "Type\022\010\n\004LESS\020\000\022\021\n\rLESS_OR_EQUAL\020\001\022\t\n\005EQU" +
+      "AL\020\002\022\r\n\tNOT_EQUAL\020\003\022\024\n\020GREATER_OR_EQUAL\020" +
+      "\004\022\013\n\007GREATER\020\005\022\t\n\005NO_OP\020\006B>\n*org.apache." +
+      "hadoop.hbase.protobuf.generatedB\013HBasePr" +
+      "otosH\001\240\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
         public com.google.protobuf.ExtensionRegistry assignDescriptors(
             com.google.protobuf.Descriptors.FileDescriptor root) {
           descriptor = root;
-          internal_static_TableName_descriptor =
+          internal_static_HostPort_descriptor =
             getDescriptor().getMessageTypes().get(0);
+          internal_static_HostPort_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_HostPort_descriptor,
+              new java.lang.String[] { "HostName", "Port", });
+          internal_static_TableName_descriptor =
+            getDescriptor().getMessageTypes().get(1);
           internal_static_TableName_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_TableName_descriptor,
               new java.lang.String[] { "Namespace", "Qualifier", });
           internal_static_TableSchema_descriptor =
-            getDescriptor().getMessageTypes().get(1);
+            getDescriptor().getMessageTypes().get(2);
           internal_static_TableSchema_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_TableSchema_descriptor,
               new java.lang.String[] { "TableName", "Attributes", "ColumnFamilies", "Configuration", });
           internal_static_ColumnFamilySchema_descriptor =
-            getDescriptor().getMessageTypes().get(2);
+            getDescriptor().getMessageTypes().get(3);
           internal_static_ColumnFamilySchema_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_ColumnFamilySchema_descriptor,
               new java.lang.String[] { "Name", "Attributes", "Configuration", });
           internal_static_RegionInfo_descriptor =
-            getDescriptor().getMessageTypes().get(3);
+            getDescriptor().getMessageTypes().get(4);
           internal_static_RegionInfo_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_RegionInfo_descriptor,
               new java.lang.String[] { "RegionId", "TableName", "StartKey", "EndKey", "Offline", "Split", });
           internal_static_FavoredNodes_descriptor =
-            getDescriptor().getMessageTypes().get(4);
+            getDescriptor().getMessageTypes().get(5);
           internal_static_FavoredNodes_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_FavoredNodes_descriptor,
               new java.lang.String[] { "FavoredNode", });
           internal_static_RegionSpecifier_descriptor =
-            getDescriptor().getMessageTypes().get(5);
+            getDescriptor().getMessageTypes().get(6);
           internal_static_RegionSpecifier_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_RegionSpecifier_descriptor,
               new java.lang.String[] { "Type", "Value", });
           internal_static_TimeRange_descriptor =
-            getDescriptor().getMessageTypes().get(6);
+            getDescriptor().getMessageTypes().get(7);
           internal_static_TimeRange_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_TimeRange_descriptor,
               new java.lang.String[] { "From", "To", });
           internal_static_ServerName_descriptor =
-            getDescriptor().getMessageTypes().get(7);
+            getDescriptor().getMessageTypes().get(8);
           internal_static_ServerName_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_ServerName_descriptor,
               new java.lang.String[] { "HostName", "Port", "StartCode", });
           internal_static_Coprocessor_descriptor =
-            getDescriptor().getMessageTypes().get(8);
+            getDescriptor().getMessageTypes().get(9);
           internal_static_Coprocessor_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Coprocessor_descriptor,
               new java.lang.String[] { "Name", });
           internal_static_NameStringPair_descriptor =
-            getDescriptor().getMessageTypes().get(9);
+            getDescriptor().getMessageTypes().get(10);
           internal_static_NameStringPair_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_NameStringPair_descriptor,
               new java.lang.String[] { "Name", "Value", });
           internal_static_NameBytesPair_descriptor =
-            getDescriptor().getMessageTypes().get(10);
+            getDescriptor().getMessageTypes().get(11);
           internal_static_NameBytesPair_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_NameBytesPair_descriptor,
               new java.lang.String[] { "Name", "Value", });
           internal_static_BytesBytesPair_descriptor =
-            getDescriptor().getMessageTypes().get(11);
+            getDescriptor().getMessageTypes().get(12);
           internal_static_BytesBytesPair_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_BytesBytesPair_descriptor,
               new java.lang.String[] { "First", "Second", });
           internal_static_NameInt64Pair_descriptor =
-            getDescriptor().getMessageTypes().get(12);
+            getDescriptor().getMessageTypes().get(13);
           internal_static_NameInt64Pair_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_NameInt64Pair_descriptor,
               new java.lang.String[] { "Name", "Value", });
           internal_static_SnapshotDescription_descriptor =
-            getDescriptor().getMessageTypes().get(13);
+            getDescriptor().getMessageTypes().get(14);
           internal_static_SnapshotDescription_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SnapshotDescription_descriptor,
               new java.lang.String[] { "Name", "Table", "CreationTime", "Type", "Version", });
           internal_static_ProcedureDescription_descriptor =
-            getDescriptor().getMessageTypes().get(14);
+            getDescriptor().getMessageTypes().get(15);
           internal_static_ProcedureDescription_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_ProcedureDescription_descriptor,
               new java.lang.String[] { "Signature", "Instance", "CreationTime", "Configuration", });
           internal_static_EmptyMsg_descriptor =
-            getDescriptor().getMessageTypes().get(15);
+            getDescriptor().getMessageTypes().get(16);
           internal_static_EmptyMsg_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_EmptyMsg_descriptor,
               new java.lang.String[] { });
           internal_static_LongMsg_descriptor =
-            getDescriptor().getMessageTypes().get(16);
+            getDescriptor().getMessageTypes().get(17);
           internal_static_LongMsg_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_LongMsg_descriptor,
               new java.lang.String[] { "LongMsg", });
           internal_static_DoubleMsg_descriptor =
-            getDescriptor().getMessageTypes().get(17);
+            getDescriptor().getMessageTypes().get(18);
           internal_static_DoubleMsg_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_DoubleMsg_descriptor,
               new java.lang.String[] { "DoubleMsg", });
           internal_static_BigDecimalMsg_descriptor =
-            getDescriptor().getMessageTypes().get(18);
+            getDescriptor().getMessageTypes().get(19);
           internal_static_BigDecimalMsg_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_BigDecimalMsg_descriptor,
               new java.lang.String[] { "BigdecimalMsg", });
           internal_static_UUID_descriptor =
-            getDescriptor().getMessageTypes().get(19);
+            getDescriptor().getMessageTypes().get(20);
           internal_static_UUID_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_UUID_descriptor,
               new java.lang.String[] { "LeastSigBits", "MostSigBits", });
           internal_static_NamespaceDescriptor_descriptor =
-            getDescriptor().getMessageTypes().get(20);
+            getDescriptor().getMessageTypes().get(21);
           internal_static_NamespaceDescriptor_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_NamespaceDescriptor_descriptor,
               new java.lang.String[] { "Name", "Configuration", });
           internal_static_RegionServerInfo_descriptor =
-            getDescriptor().getMessageTypes().get(21);
+            getDescriptor().getMessageTypes().get(22);
           internal_static_RegionServerInfo_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_RegionServerInfo_descriptor,

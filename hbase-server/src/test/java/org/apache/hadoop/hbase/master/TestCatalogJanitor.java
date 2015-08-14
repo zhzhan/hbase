@@ -56,6 +56,8 @@ import org.apache.hadoop.hbase.client.HConnectionManager;
 import org.apache.hadoop.hbase.client.HConnectionTestingUtility;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.executor.ExecutorService;
+import org.apache.hadoop.hbase.group.GroupAdmin;
+import org.apache.hadoop.hbase.group.GroupAdminServer;
 import org.apache.hadoop.hbase.io.Reference;
 import org.apache.hadoop.hbase.master.CatalogJanitor.SplitParentFirstComparator;
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
@@ -314,36 +316,43 @@ public class TestCatalogJanitor {
 
     @Override
     public void createNamespace(NamespaceDescriptor descriptor) throws IOException {
-      //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public void modifyNamespace(NamespaceDescriptor descriptor) throws IOException {
-      //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public void deleteNamespace(String name) throws IOException {
-      //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public NamespaceDescriptor getNamespaceDescriptor(String name) throws IOException {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
+      return null;
     }
 
     @Override
     public List<NamespaceDescriptor> listNamespaceDescriptors() throws IOException {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
+      return null;
     }
 
     @Override
     public List<HTableDescriptor> listTableDescriptorsByNamespace(String name) throws IOException {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
+      return null;
     }
 
     @Override
     public List<TableName> listTableNamesByNamespace(String name) throws IOException {
+      return null;
+    }
+
+    @Override
+    public LoadBalancer getLoadBalancer() {
+      return null;
+    }
+
+    @Override
+    public GroupAdminServer getGroupAdminServer() {
       return null;
     }
 

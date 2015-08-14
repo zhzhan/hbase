@@ -32,6 +32,7 @@ import org.apache.hadoop.hbase.TableDescriptors;
 import org.apache.hadoop.hbase.TableNotDisabledException;
 import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.executor.ExecutorService;
+import org.apache.hadoop.hbase.group.GroupAdminServer;
 
 import com.google.protobuf.Service;
 
@@ -250,4 +251,14 @@ public interface MasterServices extends Server {
    * @throws IOException
    */
   public List<TableName> listTableNamesByNamespace(String name) throws IOException;
+  
+  /**
+   * @return load balancer
+   */
+  public LoadBalancer getLoadBalancer();
+
+  /**
+   * @return load balancer
+   */
+  public GroupAdminServer getGroupAdminServer();  
 }

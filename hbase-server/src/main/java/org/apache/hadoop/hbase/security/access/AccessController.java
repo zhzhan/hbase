@@ -45,6 +45,7 @@ import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.HostPort;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.KeyValue.Type;
 import org.apache.hadoop.hbase.KeyValueUtil;
@@ -419,6 +420,7 @@ public class AccessController extends BaseMasterAndRegionObserver
    * @throws IOException if obtaining the current user fails
    * @throws AccessDeniedException if user has no authorization
    */
+
   private void requirePermission(String request, TableName tableName, byte[] family,
       byte[] qualifier, Action... permissions) throws IOException {
     User user = getActiveUser();
@@ -2482,4 +2484,34 @@ public class AccessController extends BaseMasterAndRegionObserver
   public void postReplicateLogEntries(ObserverContext<RegionServerCoprocessorEnvironment> ctx,
       List<WALEntry> entries, CellScanner cells) throws IOException {
   }
+  
+  @Override
+  public void preMoveServers(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                             Set<HostPort> servers, String targetGroup) throws IOException {
+    requirePermission("moveServers", Action.ADMIN);
+  }
+
+  @Override
+  public void preMoveTables(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                            Set<TableName> tables, String targetGroup) throws IOException {
+    requirePermission("moveTables", Action.ADMIN);
+  }
+
+  @Override
+  public void preAddGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                          String name) throws IOException {
+    requirePermission("addGroup", Action.ADMIN);
+  }
+
+  @Override
+  public void preRemoveGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                             String name) throws IOException {
+    requirePermission("removeGroup", Action.ADMIN);
+  }
+
+  @Override
+  public void preBalanceGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                              String groupName) throws IOException {
+    requirePermission("balanceGroup", Action.ADMIN);
+  }  
 }

@@ -41,8 +41,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.management.ObjectName;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.HostPort;
 import org.apache.hadoop.hbase.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -76,6 +78,7 @@ import org.apache.hadoop.hbase.client.MetaScanner;
 import org.apache.hadoop.hbase.client.MetaScanner.MetaScannerVisitor;
 import org.apache.hadoop.hbase.client.MetaScanner.MetaScannerVisitorBase;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.constraint.ConstraintException;
 import org.apache.hadoop.hbase.coprocessor.CoprocessorHost;
 import org.apache.hadoop.hbase.errorhandling.ForeignException;
 import org.apache.hadoop.hbase.exceptions.DeserializationException;
@@ -83,6 +86,9 @@ import org.apache.hadoop.hbase.exceptions.MergeRegionException;
 import org.apache.hadoop.hbase.exceptions.UnknownProtocolException;
 import org.apache.hadoop.hbase.executor.ExecutorService;
 import org.apache.hadoop.hbase.executor.ExecutorType;
+import org.apache.hadoop.hbase.group.GroupAdminServer;
+import org.apache.hadoop.hbase.group.GroupInfo;
+import org.apache.hadoop.hbase.group.GroupableBalancer;
 import org.apache.hadoop.hbase.ipc.FifoRpcScheduler;
 import org.apache.hadoop.hbase.ipc.RpcServer;
 import org.apache.hadoop.hbase.ipc.RpcServer.BlockingServiceAndInterface;
@@ -121,8 +127,12 @@ import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.RegionSpecifier.Re
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddColumnRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddColumnResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddGroupRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddGroupResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AssignRegionRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AssignRegionResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceGroupRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceGroupResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.CreateNamespaceRequest;
@@ -151,6 +161,12 @@ import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetClusterStatusR
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetClusterStatusResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetCompletedSnapshotsRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetCompletedSnapshotsResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfServerRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfServerResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfTableRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfTableResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetNamespaceDescriptorRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetNamespaceDescriptorResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetSchemaAlterStatusRequest;
@@ -171,6 +187,8 @@ import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsRestoreSnapshot
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsRestoreSnapshotDoneResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsSnapshotDoneRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsSnapshotDoneResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListGroupInfosRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListGroupInfosResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListNamespaceDescriptorsRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListNamespaceDescriptorsResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListTableDescriptorsByNamespaceRequest;
@@ -185,8 +203,14 @@ import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ModifyTableReques
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ModifyTableResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveRegionRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveRegionResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveServersRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveServersResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveTablesRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveTablesResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.OfflineRegionRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.OfflineRegionResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RemoveGroupRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RemoveGroupResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RestoreSnapshotRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RestoreSnapshotResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RunCatalogScanRequest;
@@ -361,6 +385,8 @@ MasterServices, Server {
   private LoadBalancerTracker loadBalancerTracker;
   // master address tracker
   private MasterAddressTracker masterAddressTracker;
+  // group admin apis
+  private GroupAdminServer groupAdminServer;
 
   // RPC server for the HMaster
   private final RpcServerInterface rpcServer;
@@ -967,6 +993,11 @@ MasterServices, Server {
     previouslyFailedMetaRSs.addAll(previouslyFailedServers);
 
     this.initializationBeforeMetaAssignment = true;
+
+    if (balancer instanceof GroupableBalancer) {
+      groupAdminServer = new GroupAdminServer(this);
+      ((GroupableBalancer)balancer).setGroupInfoManager(groupAdminServer.getGroupInfoManager());
+    }
 
     //initialize load balancer
     this.balancer.setClusterStatus(getClusterStatus());
@@ -1795,11 +1826,17 @@ MasterServices, Server {
       final byte[] destServerName) throws HBaseIOException {
     RegionState regionState = assignmentManager.getRegionStates().
       getRegionState(Bytes.toString(encodedRegionName));
-    if (regionState == null) {
+
+    HRegionInfo hri;
+    if (Bytes.toString(encodedRegionName)
+        .equals(HRegionInfo.FIRST_META_REGIONINFO.getEncodedName())) {
+      hri = HRegionInfo.FIRST_META_REGIONINFO;
+    } else if (regionState != null) {
+      hri = regionState.getRegion();
+    } else {
       throw new UnknownRegionException(Bytes.toStringBinary(encodedRegionName));
     }
 
-    HRegionInfo hri = regionState.getRegion();
     ServerName dest;
     if (destServerName == null || destServerName.length == 0) {
       LOG.info("Passed destination servername is null/empty so " +
@@ -1807,8 +1844,17 @@ MasterServices, Server {
       final List<ServerName> destServers = this.serverManager.createDestinationServersList(
         regionState.getServerName());
       dest = balancer.randomAssignment(hri, destServers);
+      if (dest == null) {
+        LOG.debug("Unable to determine a plan to assign " + hri);
+        return;
+      }
     } else {
-      dest = ServerName.valueOf(Bytes.toString(destServerName));
+      ServerName candidate = ServerName.valueOf(Bytes.toString(destServerName));
+      dest = balancer.randomAssignment(hri, Lists.newArrayList(candidate));
+      if (dest == null) {
+        LOG.debug("Unable to determine a plan to assign " + hri);
+        return;
+      }
       if (dest.equals(regionState.getServerName())) {
         LOG.debug("Skipping move of region " + hri.getRegionNameAsString()
           + " because region already assigned to the same server " + dest + ".");
@@ -2143,7 +2189,7 @@ MasterServices, Server {
   throws ServiceException {
     try {
       addColumn(ProtobufUtil.toTableName(req.getTableName()),
-        HColumnDescriptor.convert(req.getColumnFamilies()));
+          HColumnDescriptor.convert(req.getColumnFamilies()));
     } catch (IOException ioe) {
       throw new ServiceException(ioe);
     }
@@ -2174,7 +2220,7 @@ MasterServices, Server {
   throws ServiceException {
     try {
       modifyColumn(ProtobufUtil.toTableName(req.getTableName()),
-        HColumnDescriptor.convert(req.getColumnFamilies()));
+          HColumnDescriptor.convert(req.getColumnFamilies()));
     } catch (IOException ioe) {
       throw new ServiceException(ioe);
     }
@@ -2781,7 +2827,18 @@ MasterServices, Server {
       }
       Pair<HRegionInfo, ServerName> pair =
         MetaReader.getRegion(this.catalogTracker, regionName);
-      if (pair == null) throw new UnknownRegionException(Bytes.toString(regionName));
+      if (Bytes.equals(HRegionInfo.FIRST_META_REGIONINFO.getRegionName(),regionName)) {
+        try {
+          pair = new Pair<HRegionInfo, ServerName>(HRegionInfo.FIRST_META_REGIONINFO,
+              this.catalogTracker.getMetaLocation());
+        } catch (InterruptedException e) {
+          throw new IOException(e);
+        }
+      }
+      if (pair == null) {
+        throw new UnknownRegionException(Bytes.toString(regionName));
+      }
+
       HRegionInfo hri = pair.getFirst();
       if (cpHost != null) {
         if (cpHost.preUnassign(hri, force)) {
@@ -3413,6 +3470,12 @@ MasterServices, Server {
   @Override
   public void createNamespace(NamespaceDescriptor descriptor) throws IOException {
     TableName.isLegalNamespaceName(Bytes.toBytes(descriptor.getName()));
+
+    String group =  descriptor.getConfigurationValue(GroupInfo.NAMESPACEDESC_PROP_GROUP);
+    if(group != null && groupAdminServer.getGroupInfo(group) == null) {
+      throw new ConstraintException("Region server group "+group+" does not exit");
+    }
+
     if (cpHost != null) {
       if (cpHost.preCreateNamespace(descriptor)) {
         return;
@@ -3428,6 +3491,12 @@ MasterServices, Server {
   @Override
   public void modifyNamespace(NamespaceDescriptor descriptor) throws IOException {
     TableName.isLegalNamespaceName(Bytes.toBytes(descriptor.getName()));
+
+    String group = descriptor.getConfigurationValue(GroupInfo.NAMESPACEDESC_PROP_GROUP);
+    if(group != null && groupAdminServer.getGroupInfo(group) == null) {
+      throw new ConstraintException("Region server group "+group+" does not exit");
+    }
+
     if (cpHost != null) {
       if (cpHost.preModifyNamespace(descriptor)) {
         return;
@@ -3573,7 +3642,7 @@ MasterServices, Server {
       .getDefaultLoadBalancerClass().getName());
   }
 
-  /** 
+  /**
    * Returns the security capabilities in effect on the cluster
    */
   @Override
@@ -3611,5 +3680,159 @@ MasterServices, Server {
       throw new ServiceException(e);
     }
     return response.build();
+  }
+
+  @Override
+  public LoadBalancer getLoadBalancer() {
+    return balancer;
+  }
+
+  @Override
+  public GroupAdminServer getGroupAdminServer() {
+    return groupAdminServer;
+  }
+
+  @Override
+  public GetGroupInfoResponse getGroupInfo(RpcController controller, GetGroupInfoRequest request) throws ServiceException {
+    MasterProtos.GetGroupInfoResponse response = null;
+    try {
+      MasterProtos.GetGroupInfoResponse.Builder builder =
+          MasterProtos.GetGroupInfoResponse.newBuilder();
+      GroupInfo groupInfo = groupAdminServer.getGroupInfo(request.getGroupName());
+      if(groupInfo != null) {
+        builder.setGroupInfo(ProtobufUtil.toProtoGroupInfo(groupInfo));
+      }
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public GetGroupInfoOfTableResponse getGroupInfoOfTable(RpcController controller,
+                                                                      GetGroupInfoOfTableRequest request) throws ServiceException {
+    MasterProtos.GetGroupInfoOfTableResponse response = null;
+    try {
+      MasterProtos.GetGroupInfoOfTableResponse.Builder builder =
+          MasterProtos.GetGroupInfoOfTableResponse.newBuilder();
+      GroupInfo groupInfo =
+          groupAdminServer.getGroupInfoOfTable(ProtobufUtil.toTableName(request.getTableName()));
+      response = builder.setGroupInfo(ProtobufUtil.toProtoGroupInfo(groupInfo)).build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public MoveServersResponse moveServers(RpcController controller, MoveServersRequest request) throws ServiceException {
+    MasterProtos.MoveServersResponse response = null;
+    try {
+      MasterProtos.MoveServersResponse.Builder builder =
+          MasterProtos.MoveServersResponse.newBuilder();
+      Set<HostPort> hostPorts = Sets.newHashSet();
+      for(HBaseProtos.HostPort el: request.getServersList()) {
+        hostPorts.add(new HostPort(el.getHostName(), el.getPort()));
+      }
+      groupAdminServer.moveServers(hostPorts, request.getTargetGroup());
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public MoveTablesResponse moveTables(RpcController controller, MoveTablesRequest request) throws ServiceException {
+    MasterProtos.MoveTablesResponse response = null;
+    try {
+      MasterProtos.MoveTablesResponse.Builder builder =
+          MasterProtos.MoveTablesResponse.newBuilder();
+      Set<TableName> tables = new HashSet<TableName>(request.getTableNameList().size());
+      for(HBaseProtos.TableName tableName: request.getTableNameList()) {
+        tables.add(ProtobufUtil.toTableName(tableName));
+      }
+      groupAdminServer.moveTables(tables, request.getTargetGroup());
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public AddGroupResponse addGroup(RpcController controller, AddGroupRequest request) throws ServiceException {
+    MasterProtos.AddGroupResponse response = null;
+    try {
+      MasterProtos.AddGroupResponse.Builder builder =
+          MasterProtos.AddGroupResponse.newBuilder();
+      groupAdminServer.addGroup(request.getGroupName());
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public RemoveGroupResponse removeGroup(RpcController controller, RemoveGroupRequest request) throws ServiceException {
+    MasterProtos.RemoveGroupResponse response = null;
+    try {
+      MasterProtos.RemoveGroupResponse.Builder builder =
+          MasterProtos.RemoveGroupResponse.newBuilder();
+      groupAdminServer.removeGroup(request.getGroupName());
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public BalanceGroupResponse balanceGroup(RpcController controller, BalanceGroupRequest request) throws ServiceException {
+    MasterProtos.BalanceGroupResponse response = null;
+    try {
+      MasterProtos.BalanceGroupResponse.Builder builder =
+          MasterProtos.BalanceGroupResponse.newBuilder();
+      builder.setBalanceRan(groupAdminServer.balanceGroup(request.getGroupName()));
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public ListGroupInfosResponse listGroupInfos(RpcController controller,
+                                               ListGroupInfosRequest request) throws ServiceException {
+    MasterProtos.ListGroupInfosResponse response = null;
+    try {
+      MasterProtos.ListGroupInfosResponse.Builder builder =
+          MasterProtos.ListGroupInfosResponse.newBuilder();
+      for(GroupInfo groupInfo: groupAdminServer.listGroups()) {
+        builder.addGroupInfo(ProtobufUtil.toProtoGroupInfo(groupInfo));
+      }
+      response = builder.build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
+  }
+
+  @Override
+  public GetGroupInfoOfServerResponse getGroupInfoOfServer(RpcController controller,
+                                                           GetGroupInfoOfServerRequest request) throws ServiceException {
+    MasterProtos.GetGroupInfoOfServerResponse response = null;
+    try {
+      MasterProtos.GetGroupInfoOfServerResponse.Builder builder =
+          MasterProtos.GetGroupInfoOfServerResponse.newBuilder();
+      GroupInfo groupInfo = groupAdminServer.getGroupOfServer(
+          new HostPort(request.getServer().getHostName(), request.getServer().getPort()));
+      response = builder.setGroupInfo(ProtobufUtil.toProtoGroupInfo(groupInfo)).build();
+    } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+    return response;
   }
 }

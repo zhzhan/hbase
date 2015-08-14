@@ -71,6 +71,8 @@ import org.apache.hadoop.hbase.client.backoff.ClientBackoffPolicyFactory;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.exceptions.RegionMovedException;
 import org.apache.hadoop.hbase.exceptions.RegionOpeningException;
+import org.apache.hadoop.hbase.group.GroupAdmin;
+import org.apache.hadoop.hbase.group.GroupAdminClient;
 import org.apache.hadoop.hbase.ipc.RpcClient;
 import org.apache.hadoop.hbase.ipc.RpcControllerFactory;
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
@@ -81,8 +83,12 @@ import org.apache.hadoop.hbase.protobuf.generated.ClientProtos.CoprocessorServic
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos.CoprocessorServiceResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddColumnRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddColumnResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddGroupRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddGroupResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AssignRegionRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AssignRegionResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceGroupRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceGroupResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.BalanceResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.CreateNamespaceRequest;
@@ -111,6 +117,12 @@ import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetClusterStatusR
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetClusterStatusResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetCompletedSnapshotsRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetCompletedSnapshotsResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfServerRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfServerResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfTableRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoOfTableResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetGroupInfoResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetNamespaceDescriptorRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetNamespaceDescriptorResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.GetSchemaAlterStatusRequest;
@@ -131,6 +143,8 @@ import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsRestoreSnapshot
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsRestoreSnapshotDoneResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsSnapshotDoneRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.IsSnapshotDoneResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListGroupInfosRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListGroupInfosResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListNamespaceDescriptorsRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListNamespaceDescriptorsResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ListTableDescriptorsByNamespaceRequest;
@@ -146,8 +160,14 @@ import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ModifyTableReques
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.ModifyTableResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveRegionRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveRegionResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveServersRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveServersResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveTablesRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MoveTablesResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.OfflineRegionRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.OfflineRegionResponse;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RemoveGroupRequest;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RemoveGroupResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RestoreSnapshotRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RestoreSnapshotResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.RunCatalogScanRequest;
@@ -2220,6 +2240,50 @@ public class HConnectionManager {
             SecurityCapabilitiesRequest request) throws ServiceException {
           return stub.getSecurityCapabilities(controller, request);
         }
+
+        public GetGroupInfoResponse getGroupInfo(RpcController controller, GetGroupInfoRequest request) throws ServiceException {
+          return stub.getGroupInfo(controller, request);
+        }
+
+        @Override
+        public GetGroupInfoOfTableResponse getGroupInfoOfTable(RpcController controller, GetGroupInfoOfTableRequest request) throws ServiceException {
+          return stub.getGroupInfoOfTable(controller, request);
+        }
+
+        @Override
+        public GetGroupInfoOfServerResponse getGroupInfoOfServer(RpcController controller, GetGroupInfoOfServerRequest request) throws ServiceException {
+          return stub.getGroupInfoOfServer(controller, request);
+        }
+
+        @Override
+        public MoveServersResponse moveServers(RpcController controller, MoveServersRequest request) throws ServiceException {
+          return stub.moveServers(controller, request);
+        }
+
+        @Override
+        public MoveTablesResponse moveTables(RpcController controller, MoveTablesRequest request) throws ServiceException {
+          return stub.moveTables(controller, request);
+        }
+
+        @Override
+        public AddGroupResponse addGroup(RpcController controller, AddGroupRequest request) throws ServiceException {
+          return stub.addGroup(controller, request);
+        }
+
+        @Override
+        public RemoveGroupResponse removeGroup(RpcController controller, RemoveGroupRequest request) throws ServiceException {
+          return stub.removeGroup(controller, request);
+        }
+
+        @Override
+        public BalanceGroupResponse balanceGroup(RpcController controller, BalanceGroupRequest request) throws ServiceException {
+          return stub.balanceGroup(controller, request);
+        }
+
+        @Override
+        public ListGroupInfosResponse listGroupInfos(RpcController controller, ListGroupInfosRequest request) throws ServiceException {
+          return stub.listGroupInfos(controller, request);
+        }
       };
     }
 
@@ -2496,6 +2560,11 @@ public class HConnectionManager {
     @Override
     public ClientBackoffPolicy getBackoffPolicy() {
       return this.backoffPolicy;
+    }
+
+    @Override
+    public GroupAdmin getGroupAdmin() throws IOException {
+      return new GroupAdminClient(conf);
     }
 
     /*

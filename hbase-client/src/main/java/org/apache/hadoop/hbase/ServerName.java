@@ -88,9 +88,8 @@ public class ServerName implements Comparable<ServerName>, Serializable {
   public static final String UNKNOWN_SERVERNAME = "#unknown#";
 
   private final String servername;
-  private final String hostnameOnly;
-  private final int port;
   private final long startcode;
+  private final HostPort hostPort;
 
   /**
    * Cached versioned bytes of this ServerName instance.
@@ -102,10 +101,9 @@ public class ServerName implements Comparable<ServerName>, Serializable {
   private ServerName(final String hostname, final int port, final long startcode) {
     // Drop the domain is there is one; no need of it in a local cluster.  With it, we get long
     // unwieldy names.
-    this.hostnameOnly = hostname;
-    this.port = port;
+    this.hostPort = new HostPort(hostname, port);
     this.startcode = startcode;
-    this.servername = getServerName(this.hostnameOnly, port, startcode);
+    this.servername = getServerName(hostname, port, startcode);
   }
 
   /**
@@ -189,7 +187,8 @@ public class ServerName implements Comparable<ServerName>, Serializable {
    * in compares, etc.
    */
   public String toShortString() {
-    return Addressing.createHostAndPortStr(getHostNameMinusDomain(this.hostnameOnly), this.port);
+    return Addressing.createHostAndPortStr(
+        getHostNameMinusDomain(hostPort.getHostname()), hostPort.getPort());
   }
 
   /**
@@ -208,11 +207,11 @@ public class ServerName implements Comparable<ServerName>, Serializable {
   }
 
   public String getHostname() {
-    return hostnameOnly;
+    return hostPort.getHostname();
   }
 
   public int getPort() {
-    return port;
+    return hostPort.getPort();
   }
 
   public long getStartcode() {
@@ -256,7 +255,11 @@ public class ServerName implements Comparable<ServerName>, Serializable {
    * {@link Addressing#createHostAndPortStr(String, int)}
    */
   public String getHostAndPort() {
-    return Addressing.createHostAndPortStr(this.hostnameOnly, this.port);
+    return Addressing.createHostAndPortStr(hostPort.getHostname(), hostPort.getPort());
+  }
+
+  public HostPort getHostPort() {
+    return hostPort;
   }
 
   /**

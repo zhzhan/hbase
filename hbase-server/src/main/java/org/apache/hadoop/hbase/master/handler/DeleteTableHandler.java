@@ -134,6 +134,12 @@ public class DeleteTableHandler extends TableEventHandler {
 
       // 9. Clean up any remaining rows for this table
       cleanAnyRemainingRows();
+
+      // Remove group affiliation
+      if (masterServices.getGroupAdminServer() != null) {
+        LOG.debug("Removing " + tableName + " from group.");
+        masterServices.getGroupAdminServer().cleanupGroupForTable(tableName);
+      }
     }
 
     if (cpHost != null) {

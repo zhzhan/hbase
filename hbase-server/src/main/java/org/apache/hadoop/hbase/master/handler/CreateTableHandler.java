@@ -21,6 +21,7 @@ package org.apache.hadoop.hbase.master.handler;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.security.PrivilegedExceptionAction;
+import java.security.acl.Group;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -40,6 +41,7 @@ import org.apache.hadoop.hbase.catalog.MetaEditor;
 import org.apache.hadoop.hbase.catalog.MetaReader;
 import org.apache.hadoop.hbase.executor.EventHandler;
 import org.apache.hadoop.hbase.executor.EventType;
+import org.apache.hadoop.hbase.group.GroupAdminServer;
 import org.apache.hadoop.hbase.ipc.RpcServer;
 import org.apache.hadoop.hbase.master.AssignmentManager;
 import org.apache.hadoop.hbase.master.HMaster;
@@ -64,6 +66,7 @@ public class CreateTableHandler extends EventHandler {
   protected final MasterFileSystem fileSystemManager;
   protected final HTableDescriptor hTableDescriptor;
   protected final Configuration conf;
+  private final MasterServices masterServices;
   private final AssignmentManager assignmentManager;
   private final CatalogTracker catalogTracker;
   private final TableLockManager tableLockManager;
@@ -83,6 +86,7 @@ public class CreateTableHandler extends EventHandler {
     this.catalogTracker = masterServices.getCatalogTracker();
     this.assignmentManager = masterServices.getAssignmentManager();
     this.tableLockManager = masterServices.getTableLockManager();
+    this.masterServices = masterServices;
 
     this.tableLock = this.tableLockManager.writeLock(this.hTableDescriptor.getTableName()
         , EventType.C_M_CREATE_TABLE.toString());
@@ -140,6 +144,15 @@ public class CreateTableHandler extends EventHandler {
         throw new IOException("Unable to ensure that the table will be" +
           " enabling because of a ZooKeeper issue", e);
       }
+
+      //prepare table's group affiliation
+      //If master is not initialized and a create table is spawned then it is
+      //a special table and group affilition should be taken care of explicitly
+      GroupAdminServer groupAdminServer = masterServices.getGroupAdminServer();
+      if (groupAdminServer != null && masterServices.isInitialized()) {
+        groupAdminServer.prepareGroupForTable(hTableDescriptor);
+      }
+
       success = true;
     } finally {
       if (!success) {

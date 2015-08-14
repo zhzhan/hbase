@@ -27,6 +27,7 @@ import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.HostPort;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.master.RegionPlan;
@@ -34,6 +35,7 @@ import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescriptio
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 @InterfaceAudience.LimitedPrivate({HBaseInterfaceAudience.COPROC, HBaseInterfaceAudience.CONFIG})
 @InterfaceStability.Evolving
@@ -408,5 +410,55 @@ public class BaseMasterObserver implements MasterObserver {
   public void postGetTableDescriptors(ObserverContext<MasterCoprocessorEnvironment> ctx,
       List<HTableDescriptor> descriptors) throws IOException {
   }
+  
+  @Override
+  public void preMoveServers(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                             Set<HostPort> servers, String targetGroup) throws IOException {
+  }
+
+  @Override
+  public void postMoveServers(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                              Set<HostPort> servers, String targetGroup) throws IOException {
+  }
+
+  @Override
+  public void preMoveTables(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                            Set<TableName> tables, String targetGroup) throws IOException {
+  }
+
+  @Override
+  public void postMoveTables(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                             Set<TableName> tables, String targetGroup) throws IOException {
+  }
+
+  @Override
+  public void preAddGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                          String name) throws IOException {
+  }
+
+  @Override
+  public void postAddGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                           String name) throws IOException {
+  }
+
+  @Override
+  public void preRemoveGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                             String name) throws IOException {
+  }
+
+  @Override
+  public void postRemoveGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                              String name) throws IOException {
+  }
+
+  @Override
+  public void preBalanceGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                              String groupName) throws IOException {
+  }
+
+  @Override
+  public void postBalanceGroup(ObserverContext<MasterCoprocessorEnvironment> ctx,
+                               String groupName, boolean balancerRan) throws IOException {
+  }  
 
 }
