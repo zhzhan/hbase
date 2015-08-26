@@ -19,6 +19,7 @@
  */
 package org.apache.hadoop.hbase.group;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import org.apache.commons.logging.Log;
@@ -34,6 +35,7 @@ import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.Waiter;
 import org.apache.hadoop.hbase.master.HMaster;
+import org.apache.hadoop.hbase.master.MasterServices;
 import org.apache.hadoop.hbase.master.ServerManager;
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
 import org.apache.hadoop.hbase.protobuf.generated.AdminProtos;
@@ -46,15 +48,20 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -62,8 +69,6 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
 
 @Category({MediumTests.class})
 public class TestGroups extends TestGroupsBase {
@@ -139,12 +144,12 @@ public class TestGroups extends TestGroupsBase {
     TEST_UTIL.waitFor(WAIT_TIMEOUT, new Waiter.Predicate<Exception>() {
       @Override
       public boolean evaluate() throws Exception {
-        LOG.info("Waiting for cleanup to finish "+groupAdmin.listGroups());
+        LOG.info("Waiting for cleanup to finish " + groupAdmin.listGroups());
         //Might be greater since moving servers back to default
         //is after starting a server
 
         return groupAdmin.getGroupInfo(GroupInfo.DEFAULT_GROUP).getServers().size()
-           == NUM_SLAVES_BASE;
+            == NUM_SLAVES_BASE;
       }
     });
   }
@@ -156,12 +161,37 @@ public class TestGroups extends TestGroupsBase {
     //verify it was loaded properly
     assertEquals("hadoop:name=Group,service=Group", it.next().getCanonicalName());
 
-    final MXBeanImpl info = MXBeanImpl.init(groupAdmin, master);
+    final AtomicReference<HostPort> deadServer = new AtomicReference<HostPort>(null);
+
+    //We use mocks to simulate offline servers to avoid
+    //the complexity and overhead of killing servers
+    MasterServices mockMaster = Mockito.mock(MasterServices.class);
+    final ServerManager mockServerManager = Mockito.mock(ServerManager.class);
+    Mockito.when(mockMaster.getServerManager()).thenReturn(mockServerManager);
+    Mockito.when(mockServerManager.getOnlineServersList()).then(new Answer<List<ServerName>>() {
+      @Override
+      public List<ServerName> answer(InvocationOnMock invocation) throws Throwable {
+        GroupInfo groupInfo = groupAdmin.getGroupInfo(GroupInfo.DEFAULT_GROUP);
+        List<ServerName> finalList = Lists.newArrayList();
+        HostPort lastServer = groupInfo.getServers().last();
+        for (ServerName server: master.getServerManager().getOnlineServersList()) {
+          if (!server.getHostPort().equals(lastServer)) {
+            finalList.add(server);
+          }
+        }
+        deadServer.set(lastServer);
+        return finalList;
+      }
+    });
+    MXBean info = new MXBeanImpl(groupAdmin, mockMaster);
+
     GroupInfo defaultGroup = groupAdmin.getGroupInfo(GroupInfo.DEFAULT_GROUP);
     assertEquals(2, info.getGroups().size());
     assertEquals(defaultGroup.getName(), info.getGroups().get(0).getName());
     assertEquals(defaultGroup.getServers(), Sets.newTreeSet(info.getGroups().get(0).getServers()));
-    assertEquals(defaultGroup.getServers(), Sets.newTreeSet(info.getServersByGroup().get(GroupInfo.DEFAULT_GROUP)));
+    assertEquals(defaultGroup.getServers().headSet(deadServer.get()),
+        Sets.newTreeSet(info.getServersByGroup().get(GroupInfo.DEFAULT_GROUP)));
+
 
     GroupInfo barGroup = addGroup(groupAdmin, "bar", 3);
     TableName tableName1 = TableName.valueOf(tablePrefix+"_testJmx1");

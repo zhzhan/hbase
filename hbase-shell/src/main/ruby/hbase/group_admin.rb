@@ -51,9 +51,9 @@ module Hbase
       end
       group.getServers.each do |v|
         if block_given?
-          yield(v)
+          yield(v.toString)
         else
-          res += v
+          res += v.toString
         end
       end
       if block_given?

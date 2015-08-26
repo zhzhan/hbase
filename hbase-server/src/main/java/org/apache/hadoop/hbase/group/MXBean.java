@@ -39,10 +39,12 @@ public interface MXBean {
     private String name;
     private List<HostPort> servers;
     private List<TableName> tables;
+    private List<HostPort> offlineServers;
 
     //Need this to convert NavigableSet to List
-    public GroupInfoBean(GroupInfo groupInfo) {
+    public GroupInfoBean(GroupInfo groupInfo, List<HostPort> offlineServers) {
       this.name = groupInfo.getName();
+      this.offlineServers = offlineServers;
       this.servers = new LinkedList<HostPort>();
       this.servers.addAll(groupInfo.getServers());
       this.tables = new LinkedList<TableName>();
@@ -55,6 +57,10 @@ public interface MXBean {
 
     public List<HostPort> getServers() {
       return servers;
+    }
+
+    public List<HostPort> getOfflineServers() {
+      return offlineServers;
     }
 
     public List<TableName> getTables() {

@@ -34,12 +34,10 @@ import org.apache.hadoop.hbase.HBaseIOException;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HostPort;
 import org.apache.hadoop.hbase.ServerName;
-import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.master.LoadBalancer;
 import org.apache.hadoop.hbase.master.MasterServices;
 import org.apache.hadoop.hbase.master.RegionPlan;
 import org.apache.hadoop.hbase.master.balancer.StochasticLoadBalancer;
-import org.apache.hadoop.hbase.security.access.AccessControlLists;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import java.io.IOException;
@@ -62,7 +60,7 @@ import java.util.TreeMap;
  * table is online and Offline - when it is unavailable.
  *
  * During Offline, assignments are assigned based on cached information in zookeeper.
- * If unavailable (ie bootstrap) then regions are assigned randombly.
+ * If unavailable (ie bootstrap) then regions are assigned randomly.
  *
  * Once the GROUP table has been assigned, the balancer switches to Online and will then
  * start providing appropriate assignments for user tables.
@@ -150,8 +148,8 @@ public class GroupBasedLoadBalancer implements GroupableBalancer, LoadBalancer {
   public Map<ServerName, List<HRegionInfo>> roundRobinAssignment (
       List<HRegionInfo> regions, List<ServerName> servers) throws HBaseIOException {
     Map<ServerName, List<HRegionInfo>> assignments = Maps.newHashMap();
-    ListMultimap<String,HRegionInfo> regionMap = LinkedListMultimap.create();
-    ListMultimap<String,ServerName> serverMap = LinkedListMultimap.create();
+    ListMultimap<String,HRegionInfo> regionMap = ArrayListMultimap.create();
+    ListMultimap<String,ServerName> serverMap = ArrayListMultimap.create();
     generateGroupMaps(regions, servers, regionMap, serverMap);
     for(String groupKey : regionMap.keySet()) {
       if (regionMap.get(groupKey).size() > 0) {
@@ -170,27 +168,10 @@ public class GroupBasedLoadBalancer implements GroupableBalancer, LoadBalancer {
   @Override
   public Map<ServerName, List<HRegionInfo>> retainAssignment(
       Map<HRegionInfo, ServerName> regions, List<ServerName> servers) throws HBaseIOException {
-    if (!isOnline()) {
-      return offlineRetainAssignment(regions, servers);
-    }
-    return onlineRetainAssignment(regions, servers);
-  }
-
-  public Map<ServerName, List<HRegionInfo>> offlineRetainAssignment(
-      Map<HRegionInfo, ServerName> regions, List<ServerName> servers) throws HBaseIOException {
-      //We will just keep assignments even if they are incorrect.
-      //Chances are most will be assigned correctly.
-      //Then we just use balance to correct the misplaced few.
-      //we need to correct catalog and group table assignment anyway.
-      return internalBalancer.retainAssignment(regions, servers);
-  }
-
-  public Map<ServerName, List<HRegionInfo>> onlineRetainAssignment(
-      Map<HRegionInfo, ServerName> regions, List<ServerName> servers) throws HBaseIOException {
     try {
       Map<ServerName, List<HRegionInfo>> assignments = new TreeMap<ServerName, List<HRegionInfo>>();
       ListMultimap<String, HRegionInfo> groupToRegion = ArrayListMultimap.create();
-      List<HRegionInfo> misplacedRegions = getMisplacedRegions(regions);
+      Set<HRegionInfo> misplacedRegions = getMisplacedRegions(regions);
       for (HRegionInfo region : regions.keySet()) {
         if (!misplacedRegions.contains(region)) {
           String groupName = groupManager.getGroupOfTable(region.getTable());
@@ -207,8 +188,10 @@ public class GroupBasedLoadBalancer implements GroupableBalancer, LoadBalancer {
         for (HRegionInfo region : regionList) {
           currentAssignmentMap.put(region, regions.get(region));
         }
-        assignments.putAll(this.internalBalancer.retainAssignment(
-            currentAssignmentMap, candidateList));
+        if(candidateList.size() > 0) {
+          assignments.putAll(this.internalBalancer.retainAssignment(
+              currentAssignmentMap, candidateList));
+        }
       }
 
       for (HRegionInfo region : misplacedRegions) {
@@ -332,9 +315,9 @@ public class GroupBasedLoadBalancer implements GroupableBalancer, LoadBalancer {
     return regionGroup;
   }
 
-  private List<HRegionInfo> getMisplacedRegions(
+  private Set<HRegionInfo> getMisplacedRegions(
       Map<HRegionInfo, ServerName> regions) throws IOException {
-    List<HRegionInfo> misplacedRegions = new ArrayList<HRegionInfo>();
+    Set<HRegionInfo> misplacedRegions = new HashSet<HRegionInfo>();
     for (HRegionInfo region : regions.keySet()) {
       ServerName assignedServer = regions.get(region);
       GroupInfo info = groupManager.getGroup(groupManager.getGroupOfTable(region.getTable()));

@@ -2640,19 +2640,9 @@ public class TestAccessController extends SecureTestUtil {
         return null;
       }
     };
-    AccessTestAction action2 = new AccessTestAction() {
-      @Override
-      public Object run() throws Exception {
-        ACCESS_CONTROLLER.postMoveServers(ObserverContext.createAndPrepare(CP_ENV, null),
-            null, null);
-        return null;
-      }
-    };
 
     verifyAllowed(action1, SUPERUSER, USER_ADMIN);
-    verifyAllowed(action2, SUPERUSER, USER_ADMIN);
     verifyDenied(action1, USER_CREATE, USER_RW, USER_RO, USER_NONE, USER_OWNER);
-    verifyDenied(action2, USER_CREATE, USER_RW, USER_RO, USER_NONE, USER_OWNER);
   }
 
   @Test
@@ -2665,19 +2655,9 @@ public class TestAccessController extends SecureTestUtil {
         return null;
       }
     };
-    AccessTestAction action2 = new AccessTestAction() {
-      @Override
-      public Object run() throws Exception {
-        ACCESS_CONTROLLER.postMoveTables(ObserverContext.createAndPrepare(CP_ENV, null),
-            null, null);
-        return null;
-      }
-    };
 
     verifyAllowed(action1, SUPERUSER, USER_ADMIN);
-    verifyAllowed(action2, SUPERUSER, USER_ADMIN);
     verifyDenied(action1, USER_CREATE, USER_RW, USER_RO, USER_NONE, USER_OWNER);
-    verifyDenied(action2, USER_CREATE, USER_RW, USER_RO, USER_NONE, USER_OWNER);
   }
 
   @Test
@@ -2690,19 +2670,9 @@ public class TestAccessController extends SecureTestUtil {
         return null;
       }
     };
-    AccessTestAction action2 = new AccessTestAction() {
-      @Override
-      public Object run() throws Exception {
-        ACCESS_CONTROLLER.postAddGroup(ObserverContext.createAndPrepare(CP_ENV, null),
-            null);
-        return null;
-      }
-    };
 
     verifyAllowed(action1, SUPERUSER, USER_ADMIN);
-    verifyAllowed(action2, SUPERUSER, USER_ADMIN);
     verifyDenied(action1, USER_CREATE, USER_RW, USER_RO, USER_NONE, USER_OWNER);
-    verifyDenied(action2, USER_CREATE, USER_RW, USER_RO, USER_NONE, USER_OWNER);
   }
 
   @Test
@@ -2715,19 +2685,9 @@ public class TestAccessController extends SecureTestUtil {
         return null;
       }
     };
-    AccessTestAction action2 = new AccessTestAction() {
-      @Override
-      public Object run() throws Exception {
-        ACCESS_CONTROLLER.postRemoveGroup(ObserverContext.createAndPrepare(CP_ENV, null),
-            null);
-        return null;
-      }
-    };
 
     verifyAllowed(action1, SUPERUSER, USER_ADMIN);
-    verifyAllowed(action2, SUPERUSER, USER_ADMIN);
     verifyDenied(action1, USER_CREATE, USER_RW, USER_RO, USER_NONE, USER_OWNER);
-    verifyDenied(action2, USER_CREATE, USER_RW, USER_RO, USER_NONE, USER_OWNER);
   }
 
   @Test
@@ -2740,18 +2700,8 @@ public class TestAccessController extends SecureTestUtil {
         return null;
       }
     };
-    AccessTestAction action2 = new AccessTestAction() {
-      @Override
-      public Object run() throws Exception {
-        ACCESS_CONTROLLER.postBalanceGroup(ObserverContext.createAndPrepare(CP_ENV, null),
-            null, false);
-        return null;
-      }
-    };
 
     verifyAllowed(action1, SUPERUSER, USER_ADMIN);
-    verifyAllowed(action2, SUPERUSER, USER_ADMIN);
     verifyDenied(action1, USER_CREATE, USER_RW, USER_RO, USER_NONE, USER_OWNER);
-    verifyDenied(action2, USER_CREATE, USER_RW, USER_RO, USER_NONE, USER_OWNER);
   }
 }

@@ -434,7 +434,5 @@ Shell.load_command_group(
     move_group_tables
     get_server_group
     get_table_group
-    list_group_tables
-    list_group_server_transitions
   ]
 )

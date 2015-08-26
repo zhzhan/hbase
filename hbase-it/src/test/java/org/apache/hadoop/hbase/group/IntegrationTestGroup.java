@@ -74,11 +74,6 @@ public class IntegrationTestGroup extends TestGroupsBase {
     ((IntegrationTestingUtility)TEST_UTIL).restoreCluster();
     LOG.info("Done restoring the cluster");
 
-    groupAdmin.addGroup("master");
-    groupAdmin.moveServers(
-        Sets.newHashSet(cluster.getInitialClusterStatus().getMaster().getHostPort()),
-        "master");
-
     TEST_UTIL.waitFor(WAIT_TIMEOUT, new Waiter.Predicate<Exception>() {
       @Override
       public boolean evaluate() throws Exception {

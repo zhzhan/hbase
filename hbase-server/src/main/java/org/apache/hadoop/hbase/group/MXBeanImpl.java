@@ -20,6 +20,8 @@
 
 package org.apache.hadoop.hbase.group;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.HostPort;
@@ -31,6 +33,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MXBeanImpl implements MXBean {
   private static final Log LOG = LogFactory.getLog(MXBeanImpl.class);
@@ -72,9 +75,19 @@ public class MXBeanImpl implements MXBean {
 
   @Override
   public List<GroupInfoBean> getGroups() throws IOException {
-    LinkedList list = new LinkedList();
-    for(GroupInfo group: groupAdmin.listGroups()) {
-      list.add(new GroupInfoBean(group));
+    Set<HostPort> onlineServers = Sets.newHashSet();
+    for (ServerName entry: master.getServerManager().getOnlineServersList()) {
+      onlineServers.add(new HostPort(entry.getHostname(), entry.getPort()));
+    }
+    List list = Lists.newArrayList();
+    for (GroupInfo group: groupAdmin.listGroups()) {
+      List<HostPort> deadServers = Lists.newArrayList();
+      for (HostPort server: group.getServers()) {
+        if (!onlineServers.contains(server)) {
+          deadServers.add(server);
+        }
+      }
+      list.add(new GroupInfoBean(group, deadServers));
     }
     return list;
   }

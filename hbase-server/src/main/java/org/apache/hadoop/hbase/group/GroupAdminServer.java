@@ -164,59 +164,65 @@ public class GroupAdminServer implements GroupAdmin {
             "Target group is the same as source group: "+targetGroupName);
       }
 
-      //update the servers as in transition
-      for(HostPort server: servers) {
-        serversInTransition.put(server, targetGroupName);
-      }
+      try {
+        //update the servers as in transition
+        for (HostPort server : servers) {
+          serversInTransition.put(server, targetGroupName);
+        }
 
-      getGroupInfoManager().moveServers(servers, sourceGroupName, targetGroupName);
-      boolean found;
-      List<HostPort> tmpServers = Lists.newArrayList(servers);
-      do {
-        found = false;
-        for(Iterator<HostPort> iter = tmpServers.iterator();
-            iter.hasNext(); ) {
-          HostPort rs = iter.next();
-          //get online regions
-          List<HRegionInfo> regions = new LinkedList<HRegionInfo>();
-          for(Map.Entry<HRegionInfo, ServerName> el:
-              master.getAssignmentManager().getRegionStates().getRegionAssignments().entrySet()) {
-            if (el.getValue().getHostPort().equals(rs)) {
-              regions.add(el.getKey());
-            }
-          }
-          for(RegionState state :
-              master.getAssignmentManager().getRegionStates().getRegionsInTransition().values()) {
-            if (state.getServerName().getHostPort().equals(rs)) {
-              regions.add(state.getRegion());
-            }
-          }
-
-          //unassign regions for a server
-          LOG.info("Unassigning "+regions.size()+
-              " regions from server "+rs+" for move to "+targetGroupName);
-          if(regions.size() > 0) {
-            //TODO bulk unassign or throttled unassign?
-            for(HRegionInfo region: regions) {
-              //regions might get assigned from tables of target group
-              //so we need to filter
-              if(!targetGrp.containsTable(region.getTable())) {
-                master.getAssignmentManager().unassign(region);
-                found = true;
+        getGroupInfoManager().moveServers(servers, sourceGroupName, targetGroupName);
+        boolean found;
+        List<HostPort> tmpServers = Lists.newArrayList(servers);
+        do {
+          found = false;
+          for (Iterator<HostPort> iter = tmpServers.iterator();
+               iter.hasNext(); ) {
+            HostPort rs = iter.next();
+            //get online regions
+            List<HRegionInfo> regions = new LinkedList<HRegionInfo>();
+            for (Map.Entry<HRegionInfo, ServerName> el :
+                master.getAssignmentManager().getRegionStates().getRegionAssignments().entrySet()) {
+              if (el.getValue().getHostPort().equals(rs)) {
+                regions.add(el.getKey());
               }
             }
+            for (RegionState state :
+                master.getAssignmentManager().getRegionStates().getRegionsInTransition().values()) {
+              if (state.getServerName().getHostPort().equals(rs)) {
+                regions.add(state.getRegion());
+              }
+            }
+
+            //unassign regions for a server
+            LOG.info("Unassigning " + regions.size() +
+                " regions from server " + rs + " for move to " + targetGroupName);
+            if (regions.size() > 0) {
+              //TODO bulk unassign or throttled unassign?
+              for (HRegionInfo region : regions) {
+                //regions might get assigned from tables of target group
+                //so we need to filter
+                if (!targetGrp.containsTable(region.getTable())) {
+                  master.getAssignmentManager().unassign(region);
+                  found = true;
+                }
+              }
+            }
+            if (!found) {
+              iter.remove();
+            }
           }
-          if(!found) {
-            iter.remove();
-            serversInTransition.remove(rs);
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+            LOG.warn("Sleep interrupted", e);
           }
+        } while (found);
+      } finally {
+        //remove from transition
+        for (HostPort server : servers) {
+          serversInTransition.remove(server);
         }
-        try {
-          Thread.sleep(1000);
-        } catch (InterruptedException e) {
-          LOG.warn("Sleep interrupted", e);
-        }
-      } while(found);
+      }
 
       LOG.info("Move server done: "+sourceGroupName+"->"+targetGroupName);
       if (master.getMasterCoprocessorHost() != null) {

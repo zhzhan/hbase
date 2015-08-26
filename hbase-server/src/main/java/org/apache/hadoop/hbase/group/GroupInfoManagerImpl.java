@@ -23,7 +23,6 @@ package org.apache.hadoop.hbase.group;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import com.google.protobuf.ByteString;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -57,6 +56,7 @@ import org.apache.hadoop.hbase.master.TableStateManager;
 import org.apache.hadoop.hbase.master.handler.CreateTableHandler;
 import org.apache.hadoop.hbase.protobuf.ProtobufMagic;
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
+import org.apache.hadoop.hbase.protobuf.RequestConverter;
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos;
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos;
 import org.apache.hadoop.hbase.protobuf.generated.RSGroupProtos;
@@ -575,18 +575,11 @@ public class GroupInfoManagerImpl implements GroupInfoManager, ServerListener {
                       found.set(false);
                     } else if (tsm.isTableState(GROUP_TABLE_NAME, TableState.State.ENABLED)) {
                       try {
-                        HBaseProtos.RegionSpecifier regionSpecifier =
-                            HBaseProtos.RegionSpecifier.newBuilder()
-                                .setValue(ByteString.copyFrom(row.getRow()))
-                                .setType(
-                                    HBaseProtos.RegionSpecifier.RegionSpecifierType.REGION_NAME)
-                                .build();
                         ClientProtos.ClientService.BlockingInterface rs = conn.getClient(sn);
-                        ClientProtos.GetRequest req =
-                            ClientProtos.GetRequest.newBuilder()
-                                .setRegion(regionSpecifier)
-                                .setGet(ProtobufUtil.toGet(new Get(ROW_KEY))).build();
-                        rs.get(null, req);
+                        ClientProtos.GetRequest request =
+                            RequestConverter.buildGetRequest(info.getRegionName(),
+                                new Get(ROW_KEY));
+                        rs.get(null, request);
                         assignedRegions.add(info);
                       } catch(Exception ex) {
                         LOG.debug("Caught exception while verifying group region", ex);
@@ -604,18 +597,11 @@ public class GroupInfoManagerImpl implements GroupInfoManager, ServerListener {
                     if (tsm.isTableState(TableName.NAMESPACE_TABLE_NAME,
                         TableState.State.ENABLED)) {
                       try {
-                        HBaseProtos.RegionSpecifier regionSpecifier =
-                            HBaseProtos.RegionSpecifier.newBuilder()
-                                .setValue(ByteString.copyFrom(row.getRow()))
-                                .setType(
-                                    HBaseProtos.RegionSpecifier.RegionSpecifierType.REGION_NAME)
-                                .build();
                         ClientProtos.ClientService.BlockingInterface rs = conn.getClient(sn);
-                        ClientProtos.GetRequest req =
-                            ClientProtos.GetRequest.newBuilder()
-                                .setRegion(regionSpecifier)
-                                .setGet(ProtobufUtil.toGet(new Get(ROW_KEY))).build();
-                        rs.get(null, req);
+                        ClientProtos.GetRequest request =
+                            RequestConverter.buildGetRequest(info.getRegionName(),
+                                new Get(ROW_KEY));
+                        rs.get(null, request);
                         nsFound.set(true);
                       } catch(Exception ex) {
                         LOG.debug("Caught exception while verifying group region", ex);

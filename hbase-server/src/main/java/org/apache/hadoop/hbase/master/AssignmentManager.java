@@ -1222,7 +1222,13 @@ public class AssignmentManager {
           || existingPlan.getDestination() == null
           || !destServers.contains(existingPlan.getDestination())) {
         newPlan = true;
-        randomPlan = new RegionPlan(region, null, balancer.randomAssignment(region, destServers));
+        try {
+          randomPlan = new RegionPlan(region, null,
+              balancer.randomAssignment(region, destServers));
+        } catch (IOException ex) {
+          LOG.warn("Failed to create new plan.",ex);
+          return null;
+        }
         if (!region.isMetaTable() && shouldAssignRegionsWithFavoredNodes) {
           List<HRegionInfo> regions = new ArrayList<HRegionInfo>(1);
           regions.add(region);

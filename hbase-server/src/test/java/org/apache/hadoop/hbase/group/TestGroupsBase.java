@@ -272,7 +272,7 @@ public abstract class TestGroupsBase {
   }
 
   @Test
-  public void testTableMoveAndDrop() throws Exception {
+  public void testTableMoveTruncateAndDrop() throws Exception {
     LOG.info("testTableMove");
 
     final TableName tableName = TableName.valueOf(tablePrefix + "_testTableMoveAndDrop");
@@ -317,6 +317,12 @@ public abstract class TestGroupsBase {
         return count == 5;
       }
     });
+
+    //test truncate
+    admin.disableTable(tableName);
+    admin.truncateTable(tableName, true);
+    assertEquals(1, groupAdmin.getGroupInfo(newGroup.getName()).getTables().size());
+    assertEquals(tableName, groupAdmin.getGroupInfo(newGroup.getName()).getTables().first());
 
     //verify removed table is removed from group
     TEST_UTIL.deleteTable(tableName);
