@@ -60,12 +60,15 @@ public class MasterCoprocessorHost
   static class MasterEnvironment extends CoprocessorHost.Environment
       implements MasterCoprocessorEnvironment {
     private MasterServices masterServices;
+    final boolean supportGroupCPs;
 
     public MasterEnvironment(final Class<?> implClass, final Coprocessor impl,
         final int priority, final int seq, final Configuration conf,
         final MasterServices services) {
       super(impl, priority, seq, conf);
       this.masterServices = services;
+      supportGroupCPs = !useLegacyMethod(impl.getClass(),
+          "preBalanceGroup", ObserverContext.class, String.class);
     }
 
     public MasterServices getMasterServices() {
@@ -852,14 +855,16 @@ public class MasterCoprocessorHost
       }
     });
   }
-  
+
   public void preMoveServers(final Set<HostPort> servers, final String targetGroup)
       throws IOException {
     execOperation(coprocessors.isEmpty() ? null : new CoprocessorOperation() {
       @Override
       public void call(MasterObserver oserver,
           ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
-        oserver.preMoveServers(ctx, servers, targetGroup);
+        if(((MasterEnvironment)ctx.getEnvironment()).supportGroupCPs) {
+          oserver.preMoveServers(ctx, servers, targetGroup);
+        }
       }
     });
   }
@@ -870,7 +875,9 @@ public class MasterCoprocessorHost
       @Override
       public void call(MasterObserver oserver,
           ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
-        oserver.postMoveServers(ctx, servers, targetGroup);
+        if(((MasterEnvironment)ctx.getEnvironment()).supportGroupCPs) {
+          oserver.postMoveServers(ctx, servers, targetGroup);
+        }
       }
     });
   }
@@ -881,7 +888,9 @@ public class MasterCoprocessorHost
       @Override
       public void call(MasterObserver oserver,
           ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
-        oserver.preMoveTables(ctx, tables, targetGroup);
+        if(((MasterEnvironment)ctx.getEnvironment()).supportGroupCPs) {
+          oserver.preMoveTables(ctx, tables, targetGroup);
+        }
       }
     });
   }
@@ -892,7 +901,9 @@ public class MasterCoprocessorHost
       @Override
       public void call(MasterObserver oserver,
           ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
-        oserver.postMoveTables(ctx, tables, targetGroup);
+        if(((MasterEnvironment)ctx.getEnvironment()).supportGroupCPs) {
+          oserver.postMoveTables(ctx, tables, targetGroup);
+        }
       }
     });
   }
@@ -903,7 +914,9 @@ public class MasterCoprocessorHost
       @Override
       public void call(MasterObserver oserver,
           ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
-        oserver.preAddGroup(ctx, name);
+        if(((MasterEnvironment)ctx.getEnvironment()).supportGroupCPs) {
+          oserver.preAddGroup(ctx, name);
+        }
       }
     });
   }
@@ -914,7 +927,9 @@ public class MasterCoprocessorHost
       @Override
       public void call(MasterObserver oserver,
           ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
-        oserver.postAddGroup(ctx, name);
+        if (((MasterEnvironment) ctx.getEnvironment()).supportGroupCPs) {
+          oserver.postAddGroup(ctx, name);
+        }
       }
     });
   }
@@ -925,7 +940,9 @@ public class MasterCoprocessorHost
       @Override
       public void call(MasterObserver oserver,
           ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
-        oserver.preRemoveGroup(ctx, name);
+        if(((MasterEnvironment)ctx.getEnvironment()).supportGroupCPs) {
+          oserver.preRemoveGroup(ctx, name);
+        }
       }
     });
   }
@@ -936,7 +953,9 @@ public class MasterCoprocessorHost
       @Override
       public void call(MasterObserver oserver,
           ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
-        oserver.postRemoveGroup(ctx, name);
+        if(((MasterEnvironment)ctx.getEnvironment()).supportGroupCPs) {
+          oserver.postRemoveGroup(ctx, name);
+        }
       }
     });
   }
@@ -947,7 +966,9 @@ public class MasterCoprocessorHost
       @Override
       public void call(MasterObserver oserver,
           ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
-        oserver.preBalanceGroup(ctx, name);
+        if(((MasterEnvironment)ctx.getEnvironment()).supportGroupCPs) {
+          oserver.preBalanceGroup(ctx, name);
+        }
       }
     });
   }
@@ -958,10 +979,12 @@ public class MasterCoprocessorHost
       @Override
       public void call(MasterObserver oserver,
           ObserverContext<MasterCoprocessorEnvironment> ctx) throws IOException {
-        oserver.postBalanceGroup(ctx, name, balanceRan);
+        if(((MasterEnvironment)ctx.getEnvironment()).supportGroupCPs) {
+          oserver.postBalanceGroup(ctx, name, balanceRan);
+        }
       }
     });
-  }  
+  }
 
   private static abstract class CoprocessorOperation
       extends ObserverContext<MasterCoprocessorEnvironment> {
