@@ -32,7 +32,7 @@ EOF
       end
 
       def command(group_name)
-        group_admin.addGroup(group_name)
+        admin.addGroup(group_name)
       end
     end
   end

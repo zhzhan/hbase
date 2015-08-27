@@ -104,8 +104,7 @@ public class TestGroups extends TestGroupsBase {
       }
     });
     admin.setBalancerRunning(false,true);
-    groupAdmin = new VerifyingGroupAdminClient(admin.getConnection().getGroupAdmin(),
-        TEST_UTIL.getConfiguration());
+    groupAdmin = new VerifyingGroupAdminClient(TEST_UTIL.getConfiguration());
   }
 
   @AfterClass
@@ -174,7 +173,7 @@ public class TestGroups extends TestGroupsBase {
         GroupInfo groupInfo = groupAdmin.getGroupInfo(GroupInfo.DEFAULT_GROUP);
         List<ServerName> finalList = Lists.newArrayList();
         HostPort lastServer = groupInfo.getServers().last();
-        for (ServerName server: master.getServerManager().getOnlineServersList()) {
+        for (ServerName server : master.getServerManager().getOnlineServersList()) {
           if (!server.getHostPort().equals(lastServer)) {
             finalList.add(server);
           }
@@ -183,7 +182,8 @@ public class TestGroups extends TestGroupsBase {
         return finalList;
       }
     });
-    MXBean info = new MXBeanImpl(groupAdmin, mockMaster);
+
+    MXBean info = new MXBeanImpl(master.getGroupAdminServer(), mockMaster);
 
     GroupInfo defaultGroup = groupAdmin.getGroupInfo(GroupInfo.DEFAULT_GROUP);
     assertEquals(2, info.getGroups().size());

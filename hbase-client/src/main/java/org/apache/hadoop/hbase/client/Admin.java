@@ -23,6 +23,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
@@ -32,6 +33,7 @@ import org.apache.hadoop.hbase.ClusterStatus;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.HostPort;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.TableExistsException;
@@ -39,6 +41,7 @@ import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.classification.InterfaceAudience;
 import org.apache.hadoop.hbase.classification.InterfaceStability;
+import org.apache.hadoop.hbase.group.GroupInfo;
 import org.apache.hadoop.hbase.ipc.CoprocessorRpcChannel;
 import org.apache.hadoop.hbase.protobuf.generated.AdminProtos;
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos;
@@ -1546,4 +1549,77 @@ public interface Admin extends Abortable, Closeable {
    */
   AdminProtos.GetRegionInfoResponse.CompactionState getMobCompactionState(final TableName tableName)
     throws IOException;
+
+  /**
+   * Gets the group information.
+   *
+   * @param groupName the group name
+   * @return An instance of GroupInfo
+   */
+  GroupInfo getGroupInfo(String groupName) throws IOException;
+
+  /**
+   * Gets the group info of table.
+   *
+   * @param tableName the table name
+   * @return An instance of GroupInfo.
+   */
+  GroupInfo getGroupInfoOfTable(TableName tableName) throws IOException;
+
+  /**
+   * Move a set of serves to another group
+   *
+   *
+   * @param servers set of servers, must be in the form HOST:PORT
+   * @param targetGroup the target group
+   * @throws java.io.IOException Signals that an I/O exception has occurred.
+   */
+  void moveServers(Set<HostPort> servers, String targetGroup) throws IOException;
+
+  /**
+   * Move tables to a new group.
+   * This will unassign all of a table's region so it can be reassigned to the correct group.
+   * @param tables list of tables to move
+   * @param targetGroup target group
+   * @throws java.io.IOException
+   */
+  void moveTables(Set<TableName> tables, String targetGroup) throws IOException;
+
+  /**
+   * Add a new group
+   * @param name name of the group
+   * @throws java.io.IOException
+   */
+  void addGroup(String name) throws IOException;
+
+  /**
+   * Remove a group
+   * @param name name of the group
+   * @throws java.io.IOException
+   */
+  void removeGroup(String name) throws IOException;
+
+  /**
+   * Balance the regions in a group
+   *
+   * @param name the name of the gorup to balance
+   * @return
+   * @throws java.io.IOException
+   */
+  boolean balanceGroup(String name) throws IOException;
+
+  /**
+   * Lists the existing groups.
+   *
+   * @return Collection of GroupInfo.
+   */
+  List<GroupInfo> listGroups() throws IOException;
+
+  /**
+   * Retrieve the GroupInfo a server is affiliated to
+   * @param hostPort
+   * @return
+   * @throws java.io.IOException
+   */
+  GroupInfo getGroupOfServer(HostPort hostPort) throws IOException;
 }

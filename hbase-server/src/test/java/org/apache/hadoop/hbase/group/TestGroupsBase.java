@@ -69,14 +69,14 @@ public abstract class TestGroupsBase {
   protected static HBaseTestingUtility TEST_UTIL;
   protected static HBaseAdmin admin;
   protected static HBaseCluster cluster;
-  protected static GroupAdmin groupAdmin;
+  protected static VerifyingGroupAdminClient groupAdmin;
 
   public final static long WAIT_TIMEOUT = 60000*5;
   public final static int NUM_SLAVES_BASE = 4; //number of slaves for the smallest cluster
 
 
 
-  protected GroupInfo addGroup(GroupAdmin gAdmin, String groupName,
+  protected GroupInfo addGroup(VerifyingGroupAdminClient gAdmin, String groupName,
                                int serverCount) throws IOException, InterruptedException {
     GroupInfo defaultInfo = gAdmin
         .getGroupInfo(GroupInfo.DEFAULT_GROUP);
@@ -97,7 +97,7 @@ public abstract class TestGroupsBase {
     return result;
   }
 
-  static void removeGroup(GroupAdminClient groupAdmin, String groupName) throws IOException {
+  static void removeGroup(VerifyingGroupAdminClient groupAdmin, String groupName) throws IOException {
     GroupInfo groupInfo = groupAdmin.getGroupInfo(groupName);
     groupAdmin.moveTables(groupInfo.getTables(), GroupInfo.DEFAULT_GROUP);
     groupAdmin.moveServers(groupInfo.getServers(), GroupInfo.DEFAULT_GROUP);
@@ -119,7 +119,7 @@ public abstract class TestGroupsBase {
   }
 
   protected void deleteGroups() throws IOException {
-    GroupAdminClient groupAdmin = new GroupAdminClient(TEST_UTIL.getConfiguration());
+    VerifyingGroupAdminClient groupAdmin = new VerifyingGroupAdminClient(TEST_UTIL.getConfiguration());
     for(GroupInfo group: groupAdmin.listGroups()) {
       if(!group.getName().equals(GroupInfo.DEFAULT_GROUP)) {
         groupAdmin.moveTables(group.getTables(), GroupInfo.DEFAULT_GROUP);

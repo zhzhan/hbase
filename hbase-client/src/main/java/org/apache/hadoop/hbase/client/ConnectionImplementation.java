@@ -46,8 +46,6 @@ import org.apache.hadoop.hbase.client.backoff.ClientBackoffPolicyFactory;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.exceptions.RegionMovedException;
 import org.apache.hadoop.hbase.exceptions.RegionOpeningException;
-import org.apache.hadoop.hbase.group.GroupAdmin;
-import org.apache.hadoop.hbase.group.GroupAdminClient;
 import org.apache.hadoop.hbase.ipc.RpcClient;
 import org.apache.hadoop.hbase.ipc.RpcClientFactory;
 import org.apache.hadoop.hbase.ipc.RpcControllerFactory;
@@ -380,11 +378,6 @@ class ConnectionImplementation implements ClusterConnection, Closeable {
   @Override
   public Admin getAdmin() throws IOException {
     return new HBaseAdmin(this);
-  }
-
-  @Override
-  public GroupAdmin getGroupAdmin() throws IOException {
-    return new GroupAdminClient(conf);
   }
 
   private ExecutorService getBatchPool() {

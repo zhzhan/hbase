@@ -27,6 +27,7 @@ import org.apache.hadoop.hbase.HostPort;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Table;
@@ -45,65 +46,56 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 
-public class VerifyingGroupAdminClient implements GroupAdmin {
+public class VerifyingGroupAdminClient {
   private Table table;
   private ZooKeeperWatcher zkw;
   private GroupSerDe serDe;
-  private GroupAdmin wrapped;
+  private HBaseAdmin wrapped;
 
-  public VerifyingGroupAdminClient(GroupAdmin groupAdmin, Configuration conf)
+  public VerifyingGroupAdminClient(Configuration conf)
       throws IOException {
-    wrapped = groupAdmin;
+    wrapped = new HBaseAdmin(conf);
     table = ConnectionFactory.createConnection(conf).getTable(GroupInfoManager.GROUP_TABLE_NAME);
     zkw = new ZooKeeperWatcher(conf, this.getClass().getSimpleName(), null);
     serDe = new GroupSerDe();
   }
 
-  @Override
   public void addGroup(String groupName) throws IOException {
     wrapped.addGroup(groupName);
     verify();
   }
 
-  @Override
   public GroupInfo getGroupInfo(String groupName) throws IOException {
     return wrapped.getGroupInfo(groupName);
   }
 
-  @Override
   public GroupInfo getGroupInfoOfTable(TableName tableName) throws IOException {
     return wrapped.getGroupInfoOfTable(tableName);
   }
 
-  @Override
   public void moveServers(Set<HostPort> servers, String targetGroup) throws IOException {
     wrapped.moveServers(servers, targetGroup);
     verify();
   }
 
-  @Override
   public void moveTables(Set<TableName> tables, String targetGroup) throws IOException {
     wrapped.moveTables(tables, targetGroup);
     verify();
   }
 
-  @Override
   public void removeGroup(String name) throws IOException {
     wrapped.removeGroup(name);
     verify();
   }
 
-  @Override
   public boolean balanceGroup(String name) throws IOException {
     return wrapped.balanceGroup(name);
   }
 
-  @Override
   public List<GroupInfo> listGroups() throws IOException {
     return wrapped.listGroups();
   }
 
-  @Override
   public GroupInfo getGroupOfServer(HostPort hostPort) throws IOException {
     return wrapped.getGroupOfServer(hostPort);
   }
@@ -153,7 +145,7 @@ public class VerifyingGroupAdminClient implements GroupAdmin {
     }
   }
 
-  @Override
   public void close() throws IOException {
+    wrapped.close();
   }
 }

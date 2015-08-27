@@ -87,10 +87,6 @@ module Shell
       @hbase_admin ||= hbase.admin(formatter)
     end
 
-    def group_admin
-      @group_admin ||= hbase.group_admin(formatter)
-    end
-
     def hbase_table(name)
       hbase.table(name, self)
     end

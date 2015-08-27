@@ -61,7 +61,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 @InterfaceAudience.Private
 @InterfaceStability.Evolving
-public class GroupAdminServer implements GroupAdmin {
+public class GroupAdminServer {
   private static final Log LOG = LogFactory.getLog(GroupAdminServer.class);
 
     private MasterServices master;
@@ -77,13 +77,11 @@ public class GroupAdminServer implements GroupAdmin {
     registerMBean();
   }
 
-  @Override
   public GroupInfo getGroupInfo(String groupName) throws IOException {
     return getGroupInfoManager().getGroup(groupName);
   }
 
 
-  @Override
   public GroupInfo getGroupInfoOfTable(TableName tableName) throws IOException {
     String groupName = getGroupInfoManager().getGroupOfTable(tableName);
     if (groupName == null) {
@@ -95,7 +93,6 @@ public class GroupAdminServer implements GroupAdmin {
     return getGroupInfoManager().getGroup(groupName);
   }
 
-  @Override
   public void moveServers(Set<HostPort> servers, String targetGroupName)
       throws IOException {
     if (servers == null) {
@@ -231,7 +228,6 @@ public class GroupAdminServer implements GroupAdmin {
     }
   }
 
-  @Override
   public void moveTables(Set<TableName> tables, String targetGroup) throws IOException {
     if (tables == null) {
       throw new ConstraintException(
@@ -276,7 +272,6 @@ public class GroupAdminServer implements GroupAdmin {
     }
   }
 
-  @Override
   public void addGroup(String name) throws IOException {
     if (master.getMasterCoprocessorHost() != null) {
       master.getMasterCoprocessorHost().preAddGroup(name);
@@ -287,7 +282,6 @@ public class GroupAdminServer implements GroupAdmin {
     }
   }
 
-  @Override
   public void removeGroup(String name) throws IOException {
     GroupInfoManager manager = getGroupInfoManager();
     synchronized (manager) {
@@ -319,7 +313,6 @@ public class GroupAdminServer implements GroupAdmin {
     }
   }
 
-  @Override
   public boolean balanceGroup(String groupName) throws IOException {
     ServerManager serverManager = master.getServerManager();
     AssignmentManager assignmentManager = master.getAssignmentManager();
@@ -375,17 +368,14 @@ public class GroupAdminServer implements GroupAdmin {
     return balancerRan;
   }
 
-  @Override
   public List<GroupInfo> listGroups() throws IOException {
     return getGroupInfoManager().listGroups();
   }
 
-  @Override
   public GroupInfo getGroupOfServer(HostPort hostPort) throws IOException {
     return getGroupInfoManager().getGroupOfServer(hostPort);
   }
 
-  @InterfaceAudience.Private
   public GroupInfoManager getGroupInfoManager() throws IOException {
     return groupInfoManager;
   }
@@ -484,9 +474,5 @@ public class GroupAdminServer implements GroupAdmin {
     } catch (IOException ex) {
       LOG.debug("Failed to perform group information cleanup for table: " + tableName, ex);
     }
-  }
-
-  @Override
-  public void close() throws IOException {
   }
 }

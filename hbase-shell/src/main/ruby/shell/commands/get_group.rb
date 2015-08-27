@@ -34,7 +34,7 @@ EOF
       def command(group_name)
         now = Time.now
         formatter.header([ "GROUP INFORMATION" ])
-        group_admin.getGroup(group_name) do |s|
+        admin.getGroup(group_name) do |s|
           formatter.row([ s ])
         end
         formatter.footer(now)

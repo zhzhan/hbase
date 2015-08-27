@@ -40,11 +40,11 @@ public class MXBeanImpl implements MXBean {
 
   private static MXBeanImpl instance = null;
 
-  private GroupAdmin groupAdmin;
+  private GroupAdminServer groupAdminServer;
   private MasterServices master;
 
   public synchronized static MXBeanImpl init(
-      final GroupAdmin groupAdmin,
+      final GroupAdminServer groupAdmin,
       MasterServices master) {
     if (instance == null) {
       instance = new MXBeanImpl(groupAdmin, master);
@@ -52,9 +52,9 @@ public class MXBeanImpl implements MXBean {
     return instance;
   }
 
-  protected MXBeanImpl(final GroupAdmin groupAdmin,
+  protected MXBeanImpl(final GroupAdminServer groupAdmin,
       MasterServices master) {
-    this.groupAdmin = groupAdmin;
+    this.groupAdminServer = groupAdmin;
     this.master = master;
   }
 
@@ -63,7 +63,7 @@ public class MXBeanImpl implements MXBean {
     Map<String, List<HostPort>> data = new HashMap<String, List<HostPort>>();
     for (final ServerName entry :
       master.getServerManager().getOnlineServersList()) {
-      GroupInfo groupInfo = groupAdmin.getGroupOfServer(
+      GroupInfo groupInfo = groupAdminServer.getGroupOfServer(
           new HostPort(entry.getHostname(), entry.getPort()));
       if(!data.containsKey(groupInfo.getName())) {
         data.put(groupInfo.getName(), new LinkedList<HostPort>());
@@ -80,7 +80,7 @@ public class MXBeanImpl implements MXBean {
       onlineServers.add(new HostPort(entry.getHostname(), entry.getPort()));
     }
     List list = Lists.newArrayList();
-    for (GroupInfo group: groupAdmin.listGroups()) {
+    for (GroupInfo group: groupAdminServer.listGroups()) {
       List<HostPort> deadServers = Lists.newArrayList();
       for (HostPort server: group.getServers()) {
         if (!onlineServers.contains(server)) {

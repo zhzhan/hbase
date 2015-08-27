@@ -27,7 +27,6 @@ import org.apache.hadoop.hbase.Abortable;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.classification.InterfaceAudience;
 import org.apache.hadoop.hbase.classification.InterfaceStability;
-import org.apache.hadoop.hbase.group.GroupAdmin;
 
 /**
  * A cluster connection encapsulating lower level individual connections to actual servers and
@@ -166,14 +165,6 @@ public interface Connection extends Abortable, Closeable {
    * @return an Admin instance for cluster administration
    */
   Admin getAdmin() throws IOException;
-
-  /**
-   * Retrieve A GroupAdmin implementation which is used for manage region server groups.
-   * Client is not guaranteed to be thread-safe.
-   * @return GroupAdmin instance
-   * @throws IOException
-   */
-  GroupAdmin getGroupAdmin() throws IOException;
 
   @Override
   public void close() throws IOException;
