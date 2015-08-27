@@ -51,8 +51,7 @@ public class IntegrationTestGroup extends TestGroupsBase {
       //set shared configs
       admin = TEST_UTIL.getHBaseAdmin();
       cluster = TEST_UTIL.getHBaseClusterInterface();
-      groupAdmin = new VerifyingGroupAdminClient(admin.getConnection().getGroupAdmin(),
-          TEST_UTIL.getConfiguration());
+      groupAdmin = new VerifyingGroupAdminClient(TEST_UTIL.getConfiguration());
       LOG.info("Done initializing cluster");
       initialized = true;
       //cluster may not be clean

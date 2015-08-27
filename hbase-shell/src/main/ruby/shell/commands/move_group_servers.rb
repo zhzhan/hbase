@@ -30,7 +30,7 @@ EOF
       end
 
       def command(dest, *servers)
-        group_admin.moveServers(dest, *servers)
+        admin.moveServers(dest, *servers)
       end
     end
   end

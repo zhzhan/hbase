@@ -30,7 +30,7 @@ EOF
       end
 
       def command(group_name)
-        group_admin.removeGroup(group_name)
+        admin.removeGroup(group_name)
       end
     end
   end

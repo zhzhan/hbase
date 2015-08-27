@@ -38,7 +38,7 @@ EOF
         formatter.header([ "GROUPS" ])
 
         regex = /#{regex}/ unless regex.is_a?(Regexp)
-        list = group_admin.listGroups.grep(regex)
+        list = admin.listGroups.grep(regex)
         list.each do |group|
           formatter.row([ group ])
         end

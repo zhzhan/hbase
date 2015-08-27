@@ -32,7 +32,7 @@ EOF
       def command(table)
         now = Time.now
         groupName =
-            group_admin.getGroupOfTable(table).getName
+            admin.getGroupOfTable(table).getName
         formatter.row([ groupName ])
         formatter.footer(now,1)
       end

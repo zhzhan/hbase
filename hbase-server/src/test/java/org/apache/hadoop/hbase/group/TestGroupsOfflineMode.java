@@ -93,7 +93,7 @@ public class TestGroupsOfflineMode {
     final TableName failoverTable = TableName.valueOf("testOffline");
     TEST_UTIL.createTable(failoverTable, Bytes.toBytes("f"));
 
-    GroupAdminClient groupAdmin = new GroupAdminClient(TEST_UTIL.getConfiguration());
+    HBaseAdmin groupAdmin = new HBaseAdmin(TEST_UTIL.getConfiguration());
 
     final HRegionServer killRS = ((MiniHBaseCluster)cluster).getRegionServer(0);
     final HRegionServer groupRS = ((MiniHBaseCluster)cluster).getRegionServer(1);

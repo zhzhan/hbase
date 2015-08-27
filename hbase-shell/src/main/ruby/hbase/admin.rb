@@ -978,5 +978,98 @@ module Hbase
     def get_security_capabilities
       @admin.getSecurityCapabilities
     end
+
+    #----------------------------------------------------------------------------------------------
+    # Returns a list of groups in hbase
+    def listGroups
+      @admin.listGroups.map { |g| g.getName }
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # get a group's information
+    def getGroup(group_name)
+      group = @admin.getGroupInfo(group_name)
+      res = {}
+      if block_given?
+        yield("Servers:")
+      else
+        res += v
+      end
+      group.getServers.each do |v|
+        if block_given?
+          yield(v.toString)
+        else
+          res += v.toString
+        end
+      end
+      if block_given?
+        yield("Tables:")
+      else
+        res += v
+      end
+      group.getTables.each do |v|
+        if block_given?
+          yield(v.toString)
+        else
+          res += v.toString
+        end
+      end
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # add a group
+    def addGroup(group_name)
+      @admin.addGroup(group_name)
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # remove a group
+    def removeGroup(group_name)
+      @admin.removeGroup(group_name)
+    end
+    #----------------------------------------------------------------------------------------------
+    # balance a group
+    def balanceGroup(group_name)
+      @admin.balanceGroup(group_name)
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # move server to a group
+    def moveServers(dest, *args)
+      servers = java.util.HashSet.new()
+      args[0].each do |s|
+        servers.add(org.apache.hadoop.hbase.HostPort.valueOf(s))
+      end
+      @admin.moveServers(servers, dest)
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # move server to a group
+    def moveTables(dest, *args)
+      tables = java.util.HashSet.new();
+      args[0].each do |s|
+        tables.add(org.apache.hadoop.hbase.TableName.valueOf(s))
+      end
+      @admin.moveTables(tables,dest)
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # get group of server
+    def getGroupOfServer(server)
+      @admin.getGroupOfServer(org.apache.hadoop.hbase.HostPort.valueOf(server))
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # get group of server
+    def getGroupOfTable(table)
+      @admin.getGroupInfoOfTable(org.apache.hadoop.hbase.TableName.valueOf(table))
+    end
+
+    #----------------------------------------------------------------------------------------------
+    # get list tables of groups
+    def listTablesOfGroup(group_name)
+      @admin.listTablesOfGroup(group_name)
+    end
+
   end
 end

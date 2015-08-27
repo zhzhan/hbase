@@ -28,10 +28,12 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -44,6 +46,7 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.HostPort;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.NotServingRegionException;
@@ -65,6 +68,7 @@ import org.apache.hadoop.hbase.client.MetaScanner.MetaScannerVisitorBase;
 import org.apache.hadoop.hbase.client.security.SecurityCapability;
 import org.apache.hadoop.hbase.exceptions.DeserializationException;
 import org.apache.hadoop.hbase.exceptions.MergeRegionException;
+import org.apache.hadoop.hbase.group.GroupInfo;
 import org.apache.hadoop.hbase.ipc.CoprocessorRpcChannel;
 import org.apache.hadoop.hbase.ipc.MasterCoprocessorRpcChannel;
 import org.apache.hadoop.hbase.ipc.PayloadCarryingRpcController;
@@ -91,6 +95,7 @@ import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.NameStringPair;
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.ProcedureDescription;
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription;
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.TableSchema;
+import org.apache.hadoop.hbase.protobuf.generated.MasterProtos;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AddColumnRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.AssignRegionRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.CreateNamespaceRequest;
@@ -134,6 +139,7 @@ import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.SnapshotResponse;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.StopMasterRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.TruncateTableRequest;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.UnassignRegionRequest;
+import org.apache.hadoop.hbase.protobuf.generated.RSGroupProtos;
 import org.apache.hadoop.hbase.regionserver.wal.FailedLogCloseException;
 import org.apache.hadoop.hbase.snapshot.ClientSnapshotDescriptionUtils;
 import org.apache.hadoop.hbase.snapshot.HBaseSnapshotException;
@@ -3581,6 +3587,186 @@ public class HBaseAdmin implements Abortable, Closeable {
         e = ((RemoteException)e).unwrapRemoteException();
       }
       throw e;
+    }
+  }
+
+  /**
+   * Gets the group information.
+   *
+   * @param groupName the group name
+   * @return An instance of GroupInfo
+   */
+  public GroupInfo getGroupInfo(String groupName) throws IOException {
+    try {
+
+      MasterProtos.GetGroupInfoResponse resp =
+          connection.getMaster().getGroupInfo(null,
+              MasterProtos.GetGroupInfoRequest.newBuilder().setGroupName(groupName).build());
+      if(resp.hasGroupInfo()) {
+        return ProtobufUtil.toGroupInfo(resp.getGroupInfo());
+      }
+      return null;
+    } catch (ServiceException e) {
+      throw ProtobufUtil.getRemoteException(e);
+    }
+  }
+
+  /**
+   * Gets the group info of table.
+   *
+   * @param tableName the table name
+   * @return An instance of GroupInfo.
+   */
+  public GroupInfo getGroupInfoOfTable(TableName tableName) throws IOException {
+    MasterProtos.GetGroupInfoOfTableRequest request =
+        MasterProtos.GetGroupInfoOfTableRequest.newBuilder()
+            .setTableName(ProtobufUtil.toProtoTableName(tableName)).build();
+
+    try {
+      return ProtobufUtil.toGroupInfo(
+          connection.getMaster().getGroupInfoOfTable(null, request).getGroupInfo());
+    } catch (ServiceException e) {
+      throw ProtobufUtil.getRemoteException(e);
+    }
+  }
+
+  /**
+   * Move a set of servers to another group
+   *
+   * @param servers set of servers, must be in the form HOST:PORT
+   * @param targetGroup the target group
+   * @throws IOException
+   */
+  public void moveServers(Set<HostPort> servers, String targetGroup) throws IOException {
+    Set<HBaseProtos.HostPort> hostPorts = Sets.newHashSet();
+    for(HostPort el: servers) {
+      hostPorts.add(HBaseProtos.HostPort.newBuilder()
+        .setHostName(el.getHostname())
+        .setPort(el.getPort())
+        .build());
+    }
+    MasterProtos.MoveServersRequest request =
+        MasterProtos.MoveServersRequest.newBuilder()
+            .setTargetGroup(targetGroup)
+            .addAllServers(hostPorts).build();
+
+    try {
+      connection.getMaster().moveServers(null, request);
+    } catch (ServiceException e) {
+      throw ProtobufUtil.getRemoteException(e);
+    }
+  }
+
+  /**
+   * Move tables to a new group.
+   * This will unassign all of a table's region so it can be reassigned to the correct group.
+   * 
+   * @param tables list of tables to move
+   * @param targetGroup target group
+   * @throws IOException
+   */
+  public void moveTables(Set<TableName> tables, String targetGroup) throws IOException {
+    MasterProtos.MoveTablesRequest.Builder builder =
+        MasterProtos.MoveTablesRequest.newBuilder()
+            .setTargetGroup(targetGroup);
+    for(TableName tableName: tables) {
+      builder.addTableName(ProtobufUtil.toProtoTableName(tableName));
+    }
+    try {
+      connection.getMaster().moveTables(null, builder.build());
+    } catch (ServiceException e) {
+      throw ProtobufUtil.getRemoteException(e);
+    }
+  }
+
+  /**
+   * Add a new group
+   * @param name name of the group
+   * @throws IOException
+   */
+  public void addGroup(String groupName) throws IOException {
+    MasterProtos.AddGroupRequest request =
+        MasterProtos.AddGroupRequest.newBuilder()
+            .setGroupName(groupName).build();
+    try {
+      connection.getMaster().addGroup(null, request);
+    } catch (ServiceException e) {
+      throw ProtobufUtil.getRemoteException(e);
+    }
+  }
+
+  /**
+   * Remove a group
+   * @param name name of the group
+   * @throws IOException
+   */
+  public void removeGroup(String name) throws IOException {
+    MasterProtos.RemoveGroupRequest request =
+        MasterProtos.RemoveGroupRequest.newBuilder()
+            .setGroupName(name).build();
+    try {
+      connection.getMaster().removeGroup(null, request);
+    } catch (ServiceException e) {
+      throw ProtobufUtil.getRemoteException(e);
+    }
+  }
+
+  /**
+   * Balance the regions in a group
+   *
+   * @param name the name of the gorup to balance
+   * @throws IOException
+   */
+  public boolean balanceGroup(String name) throws IOException {
+    MasterProtos.BalanceGroupRequest request =
+        MasterProtos.BalanceGroupRequest.newBuilder()
+            .setGroupName(name).build();
+
+    try {
+      return connection.getMaster().balanceGroup(null, request).getBalanceRan();
+    } catch (ServiceException e) {
+      throw ProtobufUtil.getRemoteException(e);
+    }
+  }
+
+  /**
+   * Lists the existing groups.
+   *
+   * @return Collection of GroupInfo.
+   */
+  public List<GroupInfo> listGroups() throws IOException {
+    try {
+      List<RSGroupProtos.GroupInfo> resp =
+          connection.getMaster().listGroupInfos(null,
+              MasterProtos.ListGroupInfosRequest.newBuilder().build()).getGroupInfoList();
+      List<GroupInfo> result = new ArrayList<GroupInfo>(resp.size());
+      for(RSGroupProtos.GroupInfo entry: resp) {
+        result.add(ProtobufUtil.toGroupInfo(entry));
+      }
+      return result;
+    } catch (ServiceException e) {
+      throw ProtobufUtil.getRemoteException(e);
+    }
+  }
+
+  /**
+   * Retrieve the GroupInfo a server is affiliated to
+   * @param hostPort
+   * @throws IOException
+   */
+  public GroupInfo getGroupOfServer(HostPort hostPort) throws IOException {
+    MasterProtos.GetGroupInfoOfServerRequest request =
+        MasterProtos.GetGroupInfoOfServerRequest.newBuilder()
+            .setServer(HBaseProtos.HostPort.newBuilder()
+                .setHostName(hostPort.getHostname())
+                .setPort(hostPort.getPort())
+                .build())
+            .build();
+    try {
+      return ProtobufUtil.toGroupInfo(
+          connection.getMaster().getGroupInfoOfServer(null, request).getGroupInfo());
+    } catch (ServiceException e) {
+      throw ProtobufUtil.getRemoteException(e);
     }
   }
 }

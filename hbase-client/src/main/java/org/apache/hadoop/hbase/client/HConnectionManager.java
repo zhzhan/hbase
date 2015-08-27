@@ -71,8 +71,6 @@ import org.apache.hadoop.hbase.client.backoff.ClientBackoffPolicyFactory;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.exceptions.RegionMovedException;
 import org.apache.hadoop.hbase.exceptions.RegionOpeningException;
-import org.apache.hadoop.hbase.group.GroupAdmin;
-import org.apache.hadoop.hbase.group.GroupAdminClient;
 import org.apache.hadoop.hbase.ipc.RpcClient;
 import org.apache.hadoop.hbase.ipc.RpcControllerFactory;
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
@@ -2560,11 +2558,6 @@ public class HConnectionManager {
     @Override
     public ClientBackoffPolicy getBackoffPolicy() {
       return this.backoffPolicy;
-    }
-
-    @Override
-    public GroupAdmin getGroupAdmin() throws IOException {
-      return new GroupAdminClient(conf);
     }
 
     /*

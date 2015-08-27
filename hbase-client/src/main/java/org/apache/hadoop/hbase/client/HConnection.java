@@ -36,8 +36,6 @@ import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.catalog.CatalogTracker;
 import org.apache.hadoop.hbase.client.backoff.ClientBackoffPolicy;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
-import org.apache.hadoop.hbase.group.GroupAdmin;
-import org.apache.hadoop.hbase.group.GroupAdminClient;
 import org.apache.hadoop.hbase.protobuf.generated.AdminProtos.AdminService;
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos.ClientService;
 import org.apache.hadoop.hbase.protobuf.generated.MasterProtos.MasterService;
@@ -557,9 +555,4 @@ public interface HConnection extends Abortable, Closeable {
    * @return the configured client backoff policy
    */
   ClientBackoffPolicy getBackoffPolicy();
-
-  /**
-   * @return client for region server group apis
-   */
-  GroupAdmin getGroupAdmin() throws IOException;
 }

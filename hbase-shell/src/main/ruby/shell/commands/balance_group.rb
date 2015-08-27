@@ -30,7 +30,7 @@ EOF
       end
 
       def command(group_name)
-        group_admin.balanceGroup(group_name)
+        admin.balanceGroup(group_name)
       end
     end
   end
