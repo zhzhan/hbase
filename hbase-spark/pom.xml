@@ -575,6 +575,9 @@
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
                     <filereports>WDF TestSuite.txt</filereports>
+                    <argLine>
+                        -Xmx1536m -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
+                    </argLine>
                     <parallel>false</parallel>
                 </configuration>
                 <executions>
@@ -584,9 +587,6 @@
                         <goals>
                             <goal>test</goal>
                         </goals>
-                        <configuration>
-                            <skipTests>true</skipTests>
-                        </configuration>
                     </execution>
                     <execution>
                         <id>integration-test</id>
