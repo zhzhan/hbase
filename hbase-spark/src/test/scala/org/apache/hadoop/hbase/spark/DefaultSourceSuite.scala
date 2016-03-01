@@ -28,14 +28,18 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite}
 
 class DefaultSourceSuite extends FunSuite with
 BeforeAndAfterEach with BeforeAndAfterAll with Logging {
-  @transient var sc: SparkContext = null
   var TEST_UTIL: HBaseTestingUtility = new HBaseTestingUtility
 
   val t1TableName = "t1"
   val t2TableName = "t2"
   val columnFamily = "c"
-
-  var sqlContext:SQLContext = null
+  val sparkConf = new SparkConf
+  sparkConf.set(HBaseSparkConf.BLOCK_CACHE_ENABLE, "true")
+  sparkConf.set(HBaseSparkConf.BATCH_NUM, "100")
+  sparkConf.set(HBaseSparkConf.CACHE_SIZE, "100")
+  val sc  = new SparkContext("local", "test", sparkConf)
+  val sqlContext = new SQLContext(sc)
+  import sqlContext.implicits._
   var df:DataFrame = null
 
   override def beforeAll() {
@@ -59,11 +63,7 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
     logInfo(" - creating table " + t2TableName)
     TEST_UTIL.createTable(TableName.valueOf(t2TableName), Bytes.toBytes(columnFamily))
     logInfo(" - created table")
-    val sparkConf = new SparkConf
-    sparkConf.set(HBaseSparkConf.BLOCK_CACHE_ENABLE, "true")
-    sparkConf.set(HBaseSparkConf.BATCH_NUM, "100")
-    sparkConf.set(HBaseSparkConf.CACHE_SIZE, "100")
-    sc  = new SparkContext("local", "test", sparkConf)
+
 
     val connection = ConnectionFactory.createConnection(TEST_UTIL.getConfiguration)
     try {
@@ -149,7 +149,6 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
           |}""".stripMargin
 
     new HBaseContext(sc, TEST_UTIL.getConfiguration)
-    sqlContext = new SQLContext(sc)
 
     df = sqlContext.load("org.apache.hadoop.hbase.spark",
       Map(HBaseTableCatalog.tableCatalog->hbaseTable1Catalog))
@@ -758,5 +757,57 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
     assert(results.length == 2)
 
     assert(executionRules.dynamicLogicExpression == null)
+  }
+
+  def writeCatalog = s"""{
+                    |"table":{"namespace":"default", "name":"table1"},
+                    |"rowkey":"key",
+                    |"columns":{
+                    |"col0":{"cf":"rowkey", "col":"key", "type":"string"},
+                    |"col1":{"cf":"cf1", "col":"col1", "type":"string"},
+                    |"col2":{"cf":"cf2", "col":"col2", "type":"double"},
+                    |"col3":{"cf":"cf3", "col":"col3", "type":"float"},
+                    |"col4":{"cf":"cf4", "col":"col4", "type":"int"},
+                    |"col5":{"cf":"cf5", "col":"col5", "type":"bigint"}}
+                    |}
+                    |}""".stripMargin
+
+  def withCatalog(cat: String): DataFrame = {
+    sqlContext
+      .read
+      .options(Map(HBaseTableCatalog.tableCatalog->cat))
+      .format("org.apache.hadoop.hbase.spark")
+      .load()
+  }
+
+  test("populate table") {
+    val data = (0 to 255).map { i =>
+      HBaseRecord(i, "extra")
+    }
+    sc.parallelize(data).toDF.write.options(
+      Map(HBaseTableCatalog.tableCatalog -> writeCatalog, HBaseTableCatalog.newTable -> "5"))
+      .format("org.apache.hadoop.hbase.spark")
+      .save()
+  }
+
+  test("empty column") {
+    val df = withCatalog(writeCatalog)
+    df.registerTempTable("table0")
+    val c = sqlContext.sql("select count(1) from table0").rdd.collect()(0)(0).asInstanceOf[Long]
+    assert(c == 256)
+  }
+
+  test("full query") {
+    val df = withCatalog(writeCatalog)
+    df.show
+    assert(df.count() == 256)
+  }
+
+  test("filtered query0") {
+    val df = withCatalog(writeCatalog)
+    val s = df.filter($"col0" <= "row005")
+      .select("col0", "col1")
+    s.show
+    assert(s.count() == 6)
   }
 }
