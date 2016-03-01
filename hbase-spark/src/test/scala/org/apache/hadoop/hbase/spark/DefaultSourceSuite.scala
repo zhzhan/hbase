@@ -26,6 +26,26 @@ import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.{SparkConf, SparkContext, Logging}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite}
 
+case class HBaseRecord(
+    col0: String,
+    col1: String,
+    col2: Double,
+    col3: Float,
+    col4: Int,
+    col5: Long)
+
+object HBaseRecord {
+  def apply(i: Int, t: String): HBaseRecord = {
+    val s = s"""row${"%03d".format(i)}"""
+    HBaseRecord(s,
+      s,
+      i.toDouble,
+      i.toFloat,
+      i,
+      i.toLong)
+  }
+}
+
 class DefaultSourceSuite extends FunSuite with
 BeforeAndAfterEach with BeforeAndAfterAll with Logging {
   var TEST_UTIL: HBaseTestingUtility = new HBaseTestingUtility
