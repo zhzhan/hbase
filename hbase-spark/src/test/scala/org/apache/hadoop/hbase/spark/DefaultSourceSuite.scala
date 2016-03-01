@@ -48,18 +48,14 @@ object HBaseRecord {
 
 class DefaultSourceSuite extends FunSuite with
 BeforeAndAfterEach with BeforeAndAfterAll with Logging {
+  @transient var sc: SparkContext = null
   var TEST_UTIL: HBaseTestingUtility = new HBaseTestingUtility
 
   val t1TableName = "t1"
   val t2TableName = "t2"
   val columnFamily = "c"
-  val sparkConf = new SparkConf
-  sparkConf.set(HBaseSparkConf.BLOCK_CACHE_ENABLE, "true")
-  sparkConf.set(HBaseSparkConf.BATCH_NUM, "100")
-  sparkConf.set(HBaseSparkConf.CACHE_SIZE, "100")
-  val sc  = new SparkContext("local", "test", sparkConf)
-  val sqlContext = new SQLContext(sc)
-  import sqlContext.implicits._
+
+  var sqlContext:SQLContext = null
   var df:DataFrame = null
 
   override def beforeAll() {
@@ -83,7 +79,12 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
     logInfo(" - creating table " + t2TableName)
     TEST_UTIL.createTable(TableName.valueOf(t2TableName), Bytes.toBytes(columnFamily))
     logInfo(" - created table")
+    val sparkConf = new SparkConf
+    sparkConf.set(HBaseSparkConf.BLOCK_CACHE_ENABLE, "true")
+    sparkConf.set(HBaseSparkConf.BATCH_NUM, "100")
+    sparkConf.set(HBaseSparkConf.CACHE_SIZE, "100")
 
+    sc  = new SparkContext("local", "test", sparkConf)
 
     val connection = ConnectionFactory.createConnection(TEST_UTIL.getConfiguration)
     try {
@@ -169,6 +170,7 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
           |}""".stripMargin
 
     new HBaseContext(sc, TEST_UTIL.getConfiguration)
+    sqlContext = new SQLContext(sc)
 
     df = sqlContext.load("org.apache.hadoop.hbase.spark",
       Map(HBaseTableCatalog.tableCatalog->hbaseTable1Catalog))
@@ -801,6 +803,8 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
   }
 
   test("populate table") {
+    val sql = sqlContext
+    import sql.implicits._
     val data = (0 to 255).map { i =>
       HBaseRecord(i, "extra")
     }
@@ -824,6 +828,8 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
   }
 
   test("filtered query0") {
+    val sql = sqlContext
+    import sql.implicits._
     val df = withCatalog(writeCatalog)
     val s = df.filter($"col0" <= "row005")
       .select("col0", "col1")
