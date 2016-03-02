@@ -77,9 +77,31 @@ class HBaseCatalogSuite extends FunSuite with BeforeAndAfterEach with BeforeAndA
     t.getField("col7").dt
   )
 
-
   checkDataType(
     arrayMap,
     t.getField("col8").dt
   )
+
+  test("convert") {
+    val m = Map("hbase.columns.mapping" ->
+      "KEY_FIELD STRING :key, A_FIELD STRING c:a, B_FIELD STRING c:b,",
+      "hbase.table" -> "t1")
+    val map = HBaseTableCatalog.convert(m)
+    val json = map.get(HBaseTableCatalog.tableCatalog).get
+    val parameters = Map(HBaseTableCatalog.tableCatalog->json)
+    val t = HBaseTableCatalog(parameters)
+    assert(t.getField("KEY_FIELD").isRowKey)
+    assert(DataTypeParserWrapper.parse("STRING") === t.getField("A_FIELD").dt)
+    assert(!t.getField("A_FIELD").isRowKey)
+  }
+
+  test("compatiblity") {
+    val m = Map("hbase.columns.mapping" ->
+      "KEY_FIELD STRING :key, A_FIELD STRING c:a, B_FIELD STRING c:b,",
+      "hbase.table" -> "t1")
+    val t = HBaseTableCatalog(m)
+    assert(t.getField("KEY_FIELD").isRowKey)
+    assert(DataTypeParserWrapper.parse("STRING") === t.getField("A_FIELD").dt)
+    assert(!t.getField("A_FIELD").isRowKey)
+  }
 }

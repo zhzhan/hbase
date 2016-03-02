@@ -341,33 +341,6 @@ case class HBaseRelation (
 }
 
 /**
- * Construct to contains column data that spend SparkSQL and HBase
- *
- * @param columnName   SparkSQL column name
- * @param colType      SparkSQL column type
- * @param columnFamily HBase column family
- * @param qualifier    HBase qualifier name
- */
-case class SchemaQualifierDefinition(columnName:String,
-                          colType:String,
-                          columnFamily:String,
-                          qualifier:String) extends Serializable {
-  val columnFamilyBytes = Bytes.toBytes(columnFamily)
-  val qualifierBytes = Bytes.toBytes(qualifier)
-  val columnSparkSqlType = if (colType.equals("BOOLEAN")) BooleanType
-    else if (colType.equals("TINYINT")) IntegerType
-    else if (colType.equals("INT")) IntegerType
-    else if (colType.equals("BIGINT")) LongType
-    else if (colType.equals("FLOAT")) FloatType
-    else if (colType.equals("DOUBLE")) DoubleType
-    else if (colType.equals("STRING")) StringType
-    else if (colType.equals("TIMESTAMP")) TimestampType
-    else if (colType.equals("DECIMAL")) StringType
-    else throw new IllegalArgumentException("Unsupported column type :" + colType)
-  override def toString = s"$columnName $columnFamily $qualifier"
-}
-
-/**
  * Construct to contain a single scan ranges information.  Also
  * provide functions to merge with other scan ranges through AND
  * or OR operators

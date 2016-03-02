@@ -200,14 +200,16 @@ object HBaseTableCatalog {
   val delimiter: Byte = 0
   val serdes = "serdes"
   val length = "length"
+
   /**
-   * User provide table schema definition
-   * {"tablename":"name", "rowkey":"key1:key2",
-   * "columns":{"col1":{"cf":"cf1", "col":"col1", "type":"type1"},
-   * "col2":{"cf":"cf2", "col":"col2", "type":"type2"}}}
-   *  Note that any col in the rowKey, there has to be one corresponding col defined in columns
-   */
-  def apply(parameters: Map[String, String]): HBaseTableCatalog = {
+    * User provide table schema definition
+    * {"tablename":"name", "rowkey":"key1:key2",
+    * "columns":{"col1":{"cf":"cf1", "col":"col1", "type":"type1"},
+    * "col2":{"cf":"cf2", "col":"col2", "type":"type2"}}}
+    * Note that any col in the rowKey, there has to be one corresponding col defined in columns
+    */
+  def apply(params: Map[String, String]): HBaseTableCatalog = {
+    val parameters = convert(params)
     //  println(jString)
     val jString = parameters(tableCatalog)
     val map = parse(jString).values.asInstanceOf[Map[String, _]]
@@ -234,4 +236,103 @@ object HBaseTableCatalog {
     val rKey = RowKey(map.get(rowKey).get.asInstanceOf[String])
     HBaseTableCatalog(nSpace, tName, rKey, SchemaMap(schemaMap), numReg)
   }
-}
+
+  val TABLE_KEY: String = "hbase.table"
+  val SCHEMA_COLUMNS_MAPPING_KEY: String = "hbase.columns.mapping"
+
+  /* for backward compatibility. Convert the old definition to new json based definition formated as below
+    val catalog = s"""{
+                      |"table":{"namespace":"default", "name":"htable"},
+                      |"rowkey":"key1:key2",
+                      |"columns":{
+                      |"col1":{"cf":"rowkey", "col":"key1", "type":"string"},
+                      |"col2":{"cf":"rowkey", "col":"key2", "type":"double"},
+                      |"col3":{"cf":"cf1", "col":"col2", "type":"binary"},
+                      |"col4":{"cf":"cf1", "col":"col3", "type":"timestamp"},
+                      |"col5":{"cf":"cf1", "col":"col4", "type":"double", "serdes":"${classOf[DoubleSerDes].getName}"},
+                      |"col6":{"cf":"cf1", "col":"col5", "type":"$map"},
+                      |"col7":{"cf":"cf1", "col":"col6", "type":"$array"},
+                      |"col8":{"cf":"cf1", "col":"col7", "type":"$arrayMap"}
+                      |}
+                      |}""".stripMargin
+   */
+  def convert(parameters: Map[String, String]): Map[String, String] = {
+    val tableName = parameters.get(TABLE_KEY).getOrElse(null)
+    // if the hbase.table is not defined, we assume it is json format already.
+    if (tableName == null) return parameters
+    val schemaMappingString = parameters.getOrElse(SCHEMA_COLUMNS_MAPPING_KEY, "")
+    import scala.collection.JavaConverters._
+    val schemaMap = generateSchemaMappingMap(schemaMappingString).asScala.map(_._2.asInstanceOf[SchemaQualifierDefinition])
+
+    val rowkey = schemaMap.filter {
+      _.columnFamily == "rowkey"
+    }.map(_.columnName)
+    val cols = schemaMap.map { x =>
+      s""""${x.columnName}":{"cf":"${x.columnFamily}", "col":"${x.qualifier}", "type":"${x.colType}"}""".stripMargin
+    }
+    val jsonCatalog =
+      s"""{
+         |"table":{"namespace":"default", "name":"${tableName}"},
+         |"rowkey":"${rowkey.mkString(":")}",
+         |"columns":{
+         |${cols.mkString(",")}
+         |}
+         |}
+       """.stripMargin
+    parameters ++ Map(HBaseTableCatalog.tableCatalog->jsonCatalog)
+  }
+
+  /**
+    * Reads the SCHEMA_COLUMNS_MAPPING_KEY and converts it to a map of
+    * SchemaQualifierDefinitions with the original sql column name as the key
+    *
+    * @param schemaMappingString The schema mapping string from the SparkSQL map
+    * @return                    A map of definitions keyed by the SparkSQL column name
+    */
+  def generateSchemaMappingMap(schemaMappingString:String):
+  java.util.HashMap[String, SchemaQualifierDefinition] = {
+    println(schemaMappingString)
+    try {
+      val columnDefinitions = schemaMappingString.split(',')
+      val resultingMap = new java.util.HashMap[String, SchemaQualifierDefinition]()
+      columnDefinitions.map(cd => {
+        val parts = cd.trim.split(' ')
+
+        //Make sure we get three parts
+        //<ColumnName> <ColumnType> <ColumnFamily:Qualifier>
+        if (parts.length == 3) {
+          val hbaseDefinitionParts = if (parts(2).charAt(0) == ':') {
+            Array[String]("rowkey", parts(0))
+          } else {
+            parts(2).split(':')
+          }
+          resultingMap.put(parts(0), new SchemaQualifierDefinition(parts(0),
+            parts(1), hbaseDefinitionParts(0), hbaseDefinitionParts(1)))
+        } else {
+          throw new IllegalArgumentException("Invalid value for schema mapping '" + cd +
+            "' should be '<columnName> <columnType> <columnFamily>:<qualifier>' " +
+            "for columns and '<columnName> <columnType> :<qualifier>' for rowKeys")
+        }
+      })
+      resultingMap
+    } catch {
+      case e:Exception => throw
+        new IllegalArgumentException("Invalid value for " + SCHEMA_COLUMNS_MAPPING_KEY +
+          " '" +
+          schemaMappingString + "'", e )
+    }
+  }
+  }
+
+  /**
+    * Construct to contains column data that spend SparkSQL and HBase
+    *
+    * @param columnName   SparkSQL column name
+    * @param colType      SparkSQL column type
+    * @param columnFamily HBase column family
+    * @param qualifier    HBase qualifier name
+    */
+  case class SchemaQualifierDefinition(columnName:String,
+      colType:String,
+      columnFamily:String,
+      qualifier:String)
