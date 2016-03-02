@@ -261,7 +261,7 @@ case class HBaseRelation (
     }.toMap
     val unioned = keySeq ++ valueSeq
     // Return the row ordered by the requested order
-    Row.fromSeq(fields.map(unioned.get(_)))
+    Row.fromSeq(fields.map(unioned.get(_).getOrElse(null)))
   }
 
   /**
@@ -333,10 +333,10 @@ case class HBaseRelation (
       val tmp = hRdd.map{ r =>
         val indexedFields = getIndexedProjections(requiredColumns).map(_._1)
         buildRow(indexedFields, r)
-        /*
-        Row.fromSeq(requiredColumns.map(c =>
-          DefaultSourceStaticUtils.getValue(catalog.getField(c), r)))
-          */
+
+      //  Row.fromSeq(requiredColumns.map(c =>
+      //    DefaultSourceStaticUtils.getValue(catalog.getField(c), r)))
+
       }
       if (tmp.partitions.size > 0) {
         tmp
@@ -356,7 +356,7 @@ case class HBaseRelation (
       val rdd = hbaseContext.hbaseRDD(TableName.valueOf(tableName), scan).map(r => {
         val indexedFields = getIndexedProjections(requiredColumns).map(_._1)
         buildRow(indexedFields, r._2)
-       // Row.fromSeq(requiredColumns.map(c => DefaultSourceStaticUtils.getValue(catalog.getField(c), r._2)))
+        // Row.fromSeq(requiredColumns.map(c => DefaultSourceStaticUtils.getValue(catalog.getField(c), r._2)))
       })
       resultRDD=rdd
     }
