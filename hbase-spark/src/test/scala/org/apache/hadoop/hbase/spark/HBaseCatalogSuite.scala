@@ -84,7 +84,7 @@ class HBaseCatalogSuite extends FunSuite with BeforeAndAfterEach with BeforeAndA
 
   test("convert") {
     val m = Map("hbase.columns.mapping" ->
-      "KEY_FIELD STRING :key, A_FIELD STRING c:a, B_FIELD STRING c:b,",
+      "KEY_FIELD STRING :key, A_FIELD STRING c:a, B_FIELD DOUBLE c:b, C_FIELD BINARY c:c,",
       "hbase.table" -> "t1")
     val map = HBaseTableCatalog.convert(m)
     val json = map.get(HBaseTableCatalog.tableCatalog).get
@@ -93,15 +93,19 @@ class HBaseCatalogSuite extends FunSuite with BeforeAndAfterEach with BeforeAndA
     assert(t.getField("KEY_FIELD").isRowKey)
     assert(DataTypeParserWrapper.parse("STRING") === t.getField("A_FIELD").dt)
     assert(!t.getField("A_FIELD").isRowKey)
+    assert(DataTypeParserWrapper.parse("DOUBLE") === t.getField("B_FIELD").dt)
+    assert(DataTypeParserWrapper.parse("BINARY") === t.getField("C_FIELD").dt)
   }
 
   test("compatiblity") {
     val m = Map("hbase.columns.mapping" ->
-      "KEY_FIELD STRING :key, A_FIELD STRING c:a, B_FIELD STRING c:b,",
+      "KEY_FIELD STRING :key, A_FIELD STRING c:a, B_FIELD DOUBLE c:b, C_FIELD BINARY c:c,",
       "hbase.table" -> "t1")
     val t = HBaseTableCatalog(m)
     assert(t.getField("KEY_FIELD").isRowKey)
     assert(DataTypeParserWrapper.parse("STRING") === t.getField("A_FIELD").dt)
     assert(!t.getField("A_FIELD").isRowKey)
+    assert(DataTypeParserWrapper.parse("DOUBLE") === t.getField("B_FIELD").dt)
+    assert(DataTypeParserWrapper.parse("BINARY") === t.getField("C_FIELD").dt)
   }
 }

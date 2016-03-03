@@ -80,7 +80,8 @@ public class SparkSQLPushDownFilter extends FilterBase{
       Field field = fields.apply(i);
 
       byte[] cfBytes = field.cfBytes();
-      ByteArrayComparable familyByteComparable = new ByteArrayComparable(cfBytes, 0, cfBytes.length);
+      ByteArrayComparable familyByteComparable =
+          new ByteArrayComparable(cfBytes, 0, cfBytes.length);
 
       HashMap<ByteArrayComparable, String> qualifierIndexMap =
               currentCellToColumnIndexMap.get(familyByteComparable);
@@ -90,7 +91,8 @@ public class SparkSQLPushDownFilter extends FilterBase{
         currentCellToColumnIndexMap.put(familyByteComparable, qualifierIndexMap);
       }
       byte[] qBytes = field.colBytes();
-      ByteArrayComparable qualifierByteComparable = new ByteArrayComparable(qBytes, 0, qBytes.length);
+      ByteArrayComparable qualifierByteComparable =
+          new ByteArrayComparable(qBytes, 0, qBytes.length);
 
       qualifierIndexMap.put(qualifierByteComparable, field.colName());
     }
