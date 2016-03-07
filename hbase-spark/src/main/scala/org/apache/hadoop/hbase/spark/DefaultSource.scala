@@ -150,6 +150,7 @@ case class HBaseRelation (
         val endKey = Bytes.toBytes("zzzzzzz");
         val splitKeys = Bytes.split(startKey, endKey, catalog.numReg - 3);
         admin.createTable(tableDesc, splitKeys)
+        logInfo(s"create table $tName")
         val r = connection.getRegionLocator(TableName.valueOf(catalog.name)).getAllRegionLocations
         while(r == null || r.size() == 0) {
           logDebug(s"region not allocated")
