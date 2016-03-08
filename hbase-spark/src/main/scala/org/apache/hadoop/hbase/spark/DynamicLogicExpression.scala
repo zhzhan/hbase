@@ -197,7 +197,7 @@ class PassThroughLogicExpression() extends DynamicLogicExpression {
                        valueFromQueryValueArray: Array[Array[Byte]]): Boolean = true
 
   override def appendToExpression(strBuilder: StringBuilder): Unit = {
-    strBuilder.append("Pass")
+    strBuilder.append("dummy Pass -1")
   }
 }
 
@@ -210,6 +210,7 @@ object DynamicLogicExpressionBuilder {
 
   private def build(expressionArray:Array[String],
                     offSet:Int): (DynamicLogicExpression, Int) = {
+    println(s"""expression array ${expressionArray.mkString(":")}""")
     if (expressionArray(offSet).equals("(")) {
       val left = build(expressionArray, offSet + 1)
       val right = build(expressionArray, left._2 + 1)
@@ -245,7 +246,7 @@ object DynamicLogicExpressionBuilder {
       } else if (command.equals("isNotNull")) {
         (new IsNullLogicExpression(expressionArray(offSet), true), offSet + 2)
       } else if (command.equals("Pass")) {
-        (new PassThroughLogicExpression, offSet + 2)
+        (new PassThroughLogicExpression, offSet + 3)
       } else {
         throw new Throwable("Unknown logic command:" + command)
       }

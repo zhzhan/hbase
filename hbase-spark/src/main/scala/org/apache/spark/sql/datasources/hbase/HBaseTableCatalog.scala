@@ -154,7 +154,7 @@ case class HBaseTableCatalog(
   }
 
   // Setup the start and length for each dimension of row key at runtime.
-  def dynSetupRowKey(rowKey: HBaseType) {
+  def dynSetupRowKey(rowKey: Array[Byte]) {
     logDebug(s"length: ${rowKey.length}")
     if(row.varLength) {
       var start = 0

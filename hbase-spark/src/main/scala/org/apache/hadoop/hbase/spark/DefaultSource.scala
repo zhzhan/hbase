@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapred.TableOutputFormat
-import org.apache.hadoop.hbase.spark.datasources.{HBaseSparkConf, HBaseTableScanRDD, SerializableConfiguration}
+import org.apache.hadoop.hbase.spark.datasources.{BoundRange, HBaseSparkConf, HBaseTableScanRDD, SerializableConfiguration}
 import org.apache.hadoop.hbase.types._
 import org.apache.hadoop.hbase.util.{Bytes, PositionedByteRange, SimplePositionedMutableByteRange}
 import org.apache.hadoop.hbase._
@@ -412,64 +412,98 @@ case class HBaseRelation (
         }
         new EqualLogicExpression(attr, valueArray.length - 1, false)
       case LessThan(attr, value) =>
+
         val field = catalog.getField(attr)
         if (field != null) {
           if (field.isRowKey) {
-            parentRowKeyFilter.mergeIntersect(new RowKeyFilter(null,
-              new ScanRange(DefaultSourceStaticUtils.getByteValue(field,
-                value.toString), false,
-                new Array[Byte](0), true)))
+            val b = BoundRange(value)
+            val f = b.map(_.less.map(x =>
+              new RowKeyFilter(null,
+                new ScanRange(x.low, true, x.upper, true))))
+            val parent = new RowKeyFilter()
+            f.map { x =>
+              x.foldLeft(parent) { (i, j) =>
+                i.mergeUnion(j)
+              }
+            }
+            parentRowKeyFilter.mergeIntersect(parent)
           }
-          val byteValue =
+        /*  val byteValue =
             DefaultSourceStaticUtils.getByteValue(catalog.getField(attr),
               value.toString)
           valueArray += byteValue
+        */
         }
-        new LessThanLogicExpression(attr, valueArray.length - 1)
+        new PassThroughLogicExpression
+      //  new LessThanLogicExpression(attr, valueArray.length - 1)
       case GreaterThan(attr, value) =>
         val field = catalog.getField(attr)
         if (field != null) {
           if (field.isRowKey) {
-            parentRowKeyFilter.mergeIntersect(new RowKeyFilter(null,
-              new ScanRange(null, true, DefaultSourceStaticUtils.getByteValue(field,
-                value.toString), false)))
+            val b = BoundRange(value)
+            val f = b.map(_.greater.map(x =>
+              new RowKeyFilter(null,
+                new ScanRange(x.low, true, x.upper, true))))
+            val parent = new RowKeyFilter()
+            f.map { x =>
+              x.foldLeft(parent) { (i, j) =>
+                i.mergeUnion(j)
+              }
+            }
           }
-          val byteValue =
+         /* val byteValue =
             DefaultSourceStaticUtils.getByteValue(field,
               value.toString)
-          valueArray += byteValue
+          valueArray += byteValue*/
         }
-        new GreaterThanLogicExpression(attr, valueArray.length - 1)
+        new PassThroughLogicExpression
+       // new GreaterThanLogicExpression(attr, valueArray.length - 1)
       case LessThanOrEqual(attr, value) =>
         val field = catalog.getField(attr)
         if (field != null) {
           if (field.isRowKey) {
-            parentRowKeyFilter.mergeIntersect(new RowKeyFilter(null,
-              new ScanRange(DefaultSourceStaticUtils.getByteValue(field,
-                value.toString), true,
-                new Array[Byte](0), true)))
+            val b = BoundRange(value)
+            val f = b.map(_.less.map(x =>
+              new RowKeyFilter(null,
+                new ScanRange(x.low, true, x.upper, true))))
+            val parent = new RowKeyFilter()
+            f.map { x =>
+              x.foldLeft(parent) { (i, j) =>
+                i.mergeUnion(j)
+              }
+            }
           }
-          val byteValue =
+         /* val byteValue =
             DefaultSourceStaticUtils.getByteValue(catalog.getField(attr),
               value.toString)
           valueArray += byteValue
+          */
         }
-        new LessThanOrEqualLogicExpression(attr, valueArray.length - 1)
+        new PassThroughLogicExpression
+      //  new LessThanOrEqualLogicExpression(attr, valueArray.length - 1)
       case GreaterThanOrEqual(attr, value) =>
         val field = catalog.getField(attr)
         if (field != null) {
           if (field.isRowKey) {
-            parentRowKeyFilter.mergeIntersect(new RowKeyFilter(null,
-              new ScanRange(null, true, DefaultSourceStaticUtils.getByteValue(field,
-                value.toString), true)))
+            val b = BoundRange(value)
+            val f = b.map(_.greater.map(x =>
+              new RowKeyFilter(null,
+                new ScanRange(x.low, true, x.upper, true))))
+            val parent = new RowKeyFilter()
+            f.map { x =>
+              x.foldLeft(parent) { (i, j) =>
+                i.mergeUnion(j)
+              }
+            }
           }
-          val byteValue =
+        /*  val byteValue =
             DefaultSourceStaticUtils.getByteValue(catalog.getField(attr),
               value.toString)
           valueArray += byteValue
-
+*/
         }
-        new GreaterThanOrEqualLogicExpression(attr, valueArray.length - 1)
+        new PassThroughLogicExpression
+     //   new GreaterThanOrEqualLogicExpression(attr, valueArray.length - 1)
       case Or(left, right) =>
         val leftExpression = transverseFilterTree(parentRowKeyFilter, valueArray, left)
         val rightSideRowKeyFilter = new RowKeyFilter
@@ -1037,7 +1071,7 @@ class RowKeyFilter (currentPoint:Array[Byte] = null,
    *
    * @param other Filter to merge
    */
-  def mergeUnion(other:RowKeyFilter): Unit = {
+  def mergeUnion(other:RowKeyFilter): RowKeyFilter = {
     other.points.foreach( p => points += p)
 
     other.ranges.foreach( otherR => {
@@ -1049,6 +1083,7 @@ class RowKeyFilter (currentPoint:Array[Byte] = null,
         }}
       if (!doesOverLap) ranges.+=(otherR)
     })
+    this
   }
 
   /**
@@ -1057,7 +1092,7 @@ class RowKeyFilter (currentPoint:Array[Byte] = null,
    *
    * @param other Filter to merge
    */
-  def mergeIntersect(other:RowKeyFilter): Unit = {
+  def mergeIntersect(other:RowKeyFilter): RowKeyFilter = {
     val survivingPoints = new mutable.MutableList[Array[Byte]]()
     val didntSurviveFirstPassPoints = new mutable.MutableList[Array[Byte]]()
     if (points == null || points.length == 0) {
@@ -1103,6 +1138,7 @@ class RowKeyFilter (currentPoint:Array[Byte] = null,
     }
     points = survivingPoints
     ranges = survivingRanges
+    this
   }
 
   override def toString:String = {
