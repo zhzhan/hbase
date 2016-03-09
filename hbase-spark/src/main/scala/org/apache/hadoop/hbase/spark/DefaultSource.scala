@@ -428,8 +428,7 @@ case class HBaseRelation (
             }
             parentRowKeyFilter.mergeIntersect(parent)
           }
-          val byteValue =
-            FilterOps.encode(catalog.getField(attr), value)
+          val byteValue = FilterOps.encode(field, value)
           valueArray += byteValue
 
         }
@@ -450,13 +449,10 @@ case class HBaseRelation (
               }
             }
           }
-         /* val byteValue =
-            DefaultSourceStaticUtils.getByteValue(field,
-              value.toString)
-          valueArray += byteValue*/
+          val byteValue = FilterOps.encode(field, value)
+          valueArray += byteValue
         }
-        new PassThroughLogicExpression
-       // new GreaterThanLogicExpression(attr, valueArray.length - 1)
+        new GreaterThanLogicExpression(attr, valueArray.length - 1)
       case LessThanOrEqual(attr, value) =>
         val field = catalog.getField(attr)
         if (field != null) {
@@ -472,14 +468,10 @@ case class HBaseRelation (
               }
             }
           }
-         /* val byteValue =
-            DefaultSourceStaticUtils.getByteValue(catalog.getField(attr),
-              value.toString)
+          val byteValue = FilterOps.encode(field, value)
           valueArray += byteValue
-          */
         }
-        new PassThroughLogicExpression
-      //  new LessThanOrEqualLogicExpression(attr, valueArray.length - 1)
+        new LessThanOrEqualLogicExpression(attr, valueArray.length - 1)
       case GreaterThanOrEqual(attr, value) =>
         val field = catalog.getField(attr)
         if (field != null) {
@@ -495,14 +487,10 @@ case class HBaseRelation (
               }
             }
           }
-        /*  val byteValue =
-            DefaultSourceStaticUtils.getByteValue(catalog.getField(attr),
-              value.toString)
+          val byteValue = FilterOps.encode(field, value)
           valueArray += byteValue
-*/
         }
-        new PassThroughLogicExpression
-     //   new GreaterThanOrEqualLogicExpression(attr, valueArray.length - 1)
+        new GreaterThanOrEqualLogicExpression(attr, valueArray.length - 1)
       case Or(left, right) =>
         val leftExpression = transverseFilterTree(parentRowKeyFilter, valueArray, left)
         val rightSideRowKeyFilter = new RowKeyFilter

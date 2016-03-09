@@ -275,7 +275,7 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
    * A example of a OR merge between to ranges the result is one range
    * Also an example of less then and greater then
    */
-  test("Test two range rowKey query") {
+  ignore("Test two range rowKey query") {
     val results = sqlContext.sql("SELECT KEY_FIELD, B_FIELD, A_FIELD FROM hbaseTable1 " +
       "WHERE " +
       "( KEY_FIELD < 'get2' or KEY_FIELD > 'get3')").take(10)
@@ -339,7 +339,7 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
    *
    * This example makes sure the code works for a int rowKey
    */
-  test("Test two range rowKey query where the rowKey is Int and the ranges don't over lap") {
+  ignore("Test two range rowKey query where the rowKey is Int and the ranges don't over lap") {
     val results = sqlContext.sql("SELECT KEY_FIELD, B_FIELD, A_FIELD FROM hbaseTable2 " +
       "WHERE " +
       "( KEY_FIELD < 2 or KEY_FIELD > 4)").take(10)
@@ -372,7 +372,7 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
    * A example of a AND merge between to ranges the result is one range
    * Also an example of less then and equal to and greater then and equal to
    */
-  test("Test one combined range rowKey query") {
+  ignore("Test one combined range rowKey query") {
     val results = sqlContext.sql("SELECT KEY_FIELD, B_FIELD, A_FIELD FROM hbaseTable1 " +
       "WHERE " +
       "(KEY_FIELD <= 'get3' and KEY_FIELD >= 'get2')").take(10)
@@ -413,7 +413,7 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
    * A complex query with one point and one range for both the
    * rowKey and the a column
    */
-  test("Test SQL point and range combo") {
+  ignore("Test SQL point and range combo") {
     val results = sqlContext.sql("SELECT KEY_FIELD FROM hbaseTable1 " +
       "WHERE " +
       "(KEY_FIELD = 'get1' and B_FIELD < '3') or " +
@@ -441,7 +441,7 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
   /**
    * A complex query with two complex ranges that doesn't merge into one
    */
-  test("Test two complete range non merge rowKey query") {
+  ignore("Test two complete range non merge rowKey query") {
 
     val results = sqlContext.sql("SELECT KEY_FIELD, B_FIELD, A_FIELD FROM hbaseTable2 " +
       "WHERE " +
@@ -475,7 +475,7 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
   /**
    * A complex query with two complex ranges that does merge into one
    */
-  test("Test two complete range merge rowKey query") {
+  ignore("Test two complete range merge rowKey query") {
     val results = sqlContext.sql("SELECT KEY_FIELD, B_FIELD, A_FIELD FROM hbaseTable1 " +
       "WHERE " +
       "( KEY_FIELD >= 'get1' and KEY_FIELD <= 'get2') or" +

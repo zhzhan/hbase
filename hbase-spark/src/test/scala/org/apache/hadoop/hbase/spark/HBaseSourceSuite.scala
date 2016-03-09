@@ -114,7 +114,7 @@ class HBaseSourceSuite extends FunSuite with
                     |"col8":{"cf":"cf8", "col":"col8", "type":"tinyint"}
                     |}
                     |}""".stripMargin
-/*
+
   test("populate table") {
     val sql = sqlContext
     import sql.implicits._
@@ -153,7 +153,6 @@ class HBaseSourceSuite extends FunSuite with
     assert(s.count() === 6)
   }
 
-*/
    val catalog = s"""{
                              |"table":{"namespace":"default", "name":"typeTable"},
                              |"rowkey":"key",
@@ -207,7 +206,6 @@ class HBaseSourceSuite extends FunSuite with
     s.show
     assert(s.count() === 16)
   }
-/*
 
   test("typeTable lessequal than -10") {
     val sql = sqlContext
@@ -252,7 +250,7 @@ class HBaseSourceSuite extends FunSuite with
     val s = df.filter($"col0" > 10)
     s.show
     assert(s.count() === 10)
-  }*/
+  }
   test("typeTable and") {
     val sql = sqlContext
     import sql.implicits._
@@ -270,7 +268,7 @@ class HBaseSourceSuite extends FunSuite with
     s.show
     assert(s.count() === 21)
   }
-/*
+
   test("typeTable all") {
     val sql = sqlContext
     import sql.implicits._
@@ -279,5 +277,5 @@ class HBaseSourceSuite extends FunSuite with
     s.show
     assert(s.count() === 32)
   }
-*/
+
 }

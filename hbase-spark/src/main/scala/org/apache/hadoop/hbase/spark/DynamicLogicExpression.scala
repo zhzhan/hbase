@@ -113,26 +113,26 @@ object FilterOps extends Enumeration {
   def filter(input: Array[Byte], offset1: Int, length1: Int,
              filterBytes: Array[Byte], offset2: Int, length2: Int,
              ops: FilterOps): Boolean = {
-    filterBytes(0) match {
+    filterBytes(offset2) match {
       case ShortEnc =>
         val in = Bytes.toShort(input, offset1)
-        val value = Bytes.toShort(filterBytes, offset2)
+        val value = Bytes.toShort(filterBytes, offset2 + 1)
         compare(in.compareTo(value), ops)
       case FilterOps.IntEnc =>
         val in = Bytes.toInt(input, offset1)
-        val value = Bytes.toInt(filterBytes, offset2)
+        val value = Bytes.toInt(filterBytes, offset2 + 1)
         compare(in.compareTo(value), ops)
       case FilterOps.LongEnc|FilterOps.TimestampEnc =>
         val in = Bytes.toInt(input, offset1)
-        val value = Bytes.toInt(filterBytes, offset2)
+        val value = Bytes.toInt(filterBytes, offset2 + 1)
         compare(in.compareTo(value), ops)
       case FilterOps.FloatEnc =>
         val in = Bytes.toFloat(input, offset1)
-        val value = Bytes.toFloat(filterBytes, offset2)
+        val value = Bytes.toFloat(filterBytes, offset2 + 1)
         compare(in.compareTo(value), ops)
       case FilterOps.DoubleEnc =>
         val in = Bytes.toDouble(input, offset1)
-        val value = Bytes.toDouble(filterBytes, offset2)
+        val value = Bytes.toDouble(filterBytes, offset2 + 1)
         compare(in.compareTo(value), ops)
       case _ =>
         // for String, Byte, Binary, Boolean and other types
