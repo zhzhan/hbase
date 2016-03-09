@@ -18,7 +18,8 @@
 
 package org.apache.spark.sql.datasources.hbase
 
-import org.apache.hadoop.hbase.spark.AvroSedes
+import org.apache.hadoop.hbase.spark.{FilterOps, AvroSedes}
+import org.apache.hadoop.hbase.spark.FilterOps.FilterOps
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.sql.execution.SparkSqlSerializer
 import org.apache.spark.sql.types._
@@ -63,7 +64,6 @@ object Utils {
       }
     }
   }
-
 
   // convert input to data type
   def toBytes(input: Any, field: Field): Array[Byte] = {

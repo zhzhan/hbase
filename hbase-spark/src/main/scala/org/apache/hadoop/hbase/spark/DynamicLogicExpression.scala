@@ -19,7 +19,129 @@ package org.apache.hadoop.hbase.spark
 
 import java.util
 
+import org.apache.hadoop.hbase.spark.FilterOps.FilterOps
 import org.apache.hadoop.hbase.util.Bytes
+import org.apache.spark.sql.datasources.hbase.{Field, Utils}
+import org.apache.spark.sql.types._
+
+
+object FilterOps extends Enumeration {
+  type FilterOps = Value
+  val Greater, GreaterEqual, Less, LessEqual, Equal, Unknown = Value
+  var code = 0
+  def nextCode: Byte = {
+    code += 1
+    (code - 1).asInstanceOf[Byte]
+  }
+  val BooleanEnc = nextCode
+  val ShortEnc = nextCode
+  val IntEnc = nextCode
+  val LongEnc = nextCode
+  val FloatEnc = nextCode
+  val DoubleEnc = nextCode
+  val StringEnc = nextCode
+  val BinaryEnc = nextCode
+  val TimestampEnc = nextCode
+  val UnknownEnc = nextCode
+
+  def compare(c: Int, ops: FilterOps): Boolean = {
+    ops match {
+      case Greater =>  c > 0
+      case GreaterEqual =>  c >= 0
+      case Less =>  c < 0
+      case LessEqual =>  c <= 0
+    }
+  }
+
+  def encode(field: Field,
+             value: Any): Array[Byte] = {
+    field.dt match {
+      case BooleanType =>
+        val result = new Array[Byte](Bytes.SIZEOF_BOOLEAN + 1)
+        result(0) = BooleanEnc
+        value.asInstanceOf[Boolean] match {
+          case true => result(1) = -1: Byte
+          case false => result(1) = 0: Byte
+        }
+        result
+      case ShortType =>
+        val result = new Array[Byte](Bytes.SIZEOF_SHORT + 1)
+        result(0) = ShortEnc
+        Bytes.putShort(result, 1, value.asInstanceOf[Short])
+        result
+      case IntegerType =>
+        val result = new Array[Byte](Bytes.SIZEOF_INT + 1)
+        result(0) = IntEnc
+        Bytes.putInt(result, 1, value.asInstanceOf[Int])
+        result
+      case LongType|TimestampType =>
+        val result = new Array[Byte](Bytes.SIZEOF_LONG + 1)
+        result(0) = LongEnc
+        Bytes.putLong(result, 1, value.asInstanceOf[Long])
+        result
+      case FloatType =>
+        val result = new Array[Byte](Bytes.SIZEOF_FLOAT + 1)
+        result(0) = FloatEnc
+        Bytes.putFloat(result, 1, value.asInstanceOf[Float])
+        result
+      case DoubleType =>
+        val result = new Array[Byte](Bytes.SIZEOF_DOUBLE + 1)
+        result(0) = DoubleEnc
+        Bytes.putDouble(result, 1, value.asInstanceOf[Double])
+        result
+      case BinaryType =>
+        val v = value.asInstanceOf[Array[Bytes]]
+        val result = new Array[Byte](v.length + 1)
+        result(0) = BinaryEnc
+        System.arraycopy(v, 0, result, 1, v.length)
+        result
+      case StringType =>
+        val bytes = Bytes.toBytes(value.asInstanceOf[String])
+        val result = new Array[Byte](bytes.length + 1)
+        result(0) = StringEnc
+        System.arraycopy(bytes, 0, result, 1, bytes.length)
+        result
+      case _ =>
+        val bytes = Bytes.toBytes(value.toString)
+        val result = new Array[Byte](bytes.length + 1)
+        result(0) = UnknownEnc
+        System.arraycopy(bytes, 0, result, 1, bytes.length)
+        result
+    }
+  }
+
+  def filter(input: Array[Byte], offset1: Int, length1: Int,
+             filterBytes: Array[Byte], offset2: Int, length2: Int,
+             ops: FilterOps): Boolean = {
+    filterBytes(0) match {
+      case ShortEnc =>
+        val in = Bytes.toShort(input, offset1)
+        val value = Bytes.toShort(filterBytes, offset2)
+        compare(in.compareTo(value), ops)
+      case FilterOps.IntEnc =>
+        val in = Bytes.toInt(input, offset1)
+        val value = Bytes.toInt(filterBytes, offset2)
+        compare(in.compareTo(value), ops)
+      case FilterOps.LongEnc|FilterOps.TimestampEnc =>
+        val in = Bytes.toInt(input, offset1)
+        val value = Bytes.toInt(filterBytes, offset2)
+        compare(in.compareTo(value), ops)
+      case FilterOps.FloatEnc =>
+        val in = Bytes.toFloat(input, offset1)
+        val value = Bytes.toFloat(filterBytes, offset2)
+        compare(in.compareTo(value), ops)
+      case FilterOps.DoubleEnc =>
+        val in = Bytes.toDouble(input, offset1)
+        val value = Bytes.toDouble(filterBytes, offset2)
+        compare(in.compareTo(value), ops)
+      case _ =>
+        // for String, Byte, Binary, Boolean and other types
+        // we can use the order of byte array directly.
+        compare(
+          Bytes.compareTo(input, offset1, length1, filterBytes, offset2 + 1, length2 - 1), ops)
+    }
+  }
+}
 
 /**
  * Dynamic logic for SQL push down logic there is an instance for most
@@ -38,7 +160,24 @@ trait DynamicLogicExpression {
     appendToExpression(strBuilder)
     strBuilder.toString()
   }
+  def filterOps: FilterOps = FilterOps.Unknown
+
   def appendToExpression(strBuilder:StringBuilder)
+}
+
+trait CompareTrait {
+  self: DynamicLogicExpression =>
+  def columnName: String
+  def valueFromQueryIndex: Int
+  def execute(columnToCurrentRowValueMap:
+              util.HashMap[String, ByteArrayComparable],
+              valueFromQueryValueArray:Array[Array[Byte]]): Boolean = {
+    val currentRowValue = columnToCurrentRowValueMap.get(columnName)
+    val valueFromQuery = valueFromQueryValueArray(valueFromQueryIndex)
+    currentRowValue != null &&
+      FilterOps.filter(currentRowValue.bytes, currentRowValue.offset, currentRowValue.length,
+        valueFromQuery, 0, valueFromQuery.length, filterOps)
+  }
 }
 
 class AndLogicExpression (val leftExpression:DynamicLogicExpression,
@@ -113,59 +252,28 @@ class IsNullLogicExpression (val columnName:String,
   }
 }
 
-class GreaterThanLogicExpression (val columnName:String,
-                                  val valueFromQueryIndex:Int)
-  extends DynamicLogicExpression{
-  override def execute(columnToCurrentRowValueMap:
-                       util.HashMap[String, ByteArrayComparable],
-                       valueFromQueryValueArray:Array[Array[Byte]]): Boolean = {
-    val currentRowValue = columnToCurrentRowValueMap.get(columnName)
-    val valueFromQuery = valueFromQueryValueArray(valueFromQueryIndex)
-
-    currentRowValue != null &&
-      Bytes.compareTo(currentRowValue.bytes,
-        currentRowValue.offset, currentRowValue.length, valueFromQuery,
-        0, valueFromQuery.length) > 0
-  }
+class GreaterThanLogicExpression (override val columnName:String,
+                                  override val valueFromQueryIndex:Int)
+  extends DynamicLogicExpression with CompareTrait{
+  override val filterOps = FilterOps.Greater
   override def appendToExpression(strBuilder: StringBuilder): Unit = {
     strBuilder.append(columnName + " > " + valueFromQueryIndex)
   }
 }
 
-class GreaterThanOrEqualLogicExpression (val columnName:String,
-                                         val valueFromQueryIndex:Int)
-  extends DynamicLogicExpression{
-  override def execute(columnToCurrentRowValueMap:
-                       util.HashMap[String, ByteArrayComparable],
-                       valueFromQueryValueArray:Array[Array[Byte]]): Boolean = {
-    val currentRowValue = columnToCurrentRowValueMap.get(columnName)
-    val valueFromQuery = valueFromQueryValueArray(valueFromQueryIndex)
-
-    currentRowValue != null &&
-      Bytes.compareTo(currentRowValue.bytes,
-        currentRowValue.offset, currentRowValue.length, valueFromQuery,
-        0, valueFromQuery.length) >= 0
-  }
+class GreaterThanOrEqualLogicExpression (override val columnName:String,
+                                         override val valueFromQueryIndex:Int)
+  extends DynamicLogicExpression with CompareTrait{
+  override val filterOps = FilterOps.GreaterEqual
   override def appendToExpression(strBuilder: StringBuilder): Unit = {
     strBuilder.append(columnName + " >= " + valueFromQueryIndex)
   }
 }
 
-class LessThanLogicExpression (val columnName:String,
-                               val valueFromQueryIndex:Int)
-  extends DynamicLogicExpression{
-  override def execute(columnToCurrentRowValueMap:
-                       util.HashMap[String, ByteArrayComparable],
-                       valueFromQueryValueArray:Array[Array[Byte]]): Boolean = {
-    val currentRowValue = columnToCurrentRowValueMap.get(columnName)
-    val valueFromQuery = valueFromQueryValueArray(valueFromQueryIndex)
-
-    currentRowValue != null &&
-      Bytes.compareTo(currentRowValue.bytes,
-        currentRowValue.offset, currentRowValue.length, valueFromQuery,
-        0, valueFromQuery.length) < 0
-  }
-
+class LessThanLogicExpression (override val columnName:String,
+                               override val valueFromQueryIndex:Int)
+  extends DynamicLogicExpression with CompareTrait {
+  override val filterOps = FilterOps.Less
   override def appendToExpression(strBuilder: StringBuilder): Unit = {
     strBuilder.append(columnName + " < " + valueFromQueryIndex)
   }
@@ -173,19 +281,8 @@ class LessThanLogicExpression (val columnName:String,
 
 class LessThanOrEqualLogicExpression (val columnName:String,
                                       val valueFromQueryIndex:Int)
-  extends DynamicLogicExpression{
-  override def execute(columnToCurrentRowValueMap:
-                       util.HashMap[String, ByteArrayComparable],
-                       valueFromQueryValueArray:Array[Array[Byte]]): Boolean = {
-    val currentRowValue = columnToCurrentRowValueMap.get(columnName)
-    val valueFromQuery = valueFromQueryValueArray(valueFromQueryIndex)
-
-    currentRowValue != null &&
-      Bytes.compareTo(currentRowValue.bytes,
-        currentRowValue.offset, currentRowValue.length, valueFromQuery,
-        0, valueFromQuery.length) <= 0
-  }
-
+  extends DynamicLogicExpression with CompareTrait{
+  override val filterOps = FilterOps.LessEqual
   override def appendToExpression(strBuilder: StringBuilder): Unit = {
     strBuilder.append(columnName + " <= " + valueFromQueryIndex)
   }

@@ -428,14 +428,13 @@ case class HBaseRelation (
             }
             parentRowKeyFilter.mergeIntersect(parent)
           }
-        /*  val byteValue =
-            DefaultSourceStaticUtils.getByteValue(catalog.getField(attr),
-              value.toString)
+          val byteValue =
+            FilterOps.encode(catalog.getField(attr), value)
           valueArray += byteValue
-        */
+
         }
-        new PassThroughLogicExpression
-      //  new LessThanLogicExpression(attr, valueArray.length - 1)
+       // new PassThroughLogicExpression
+        new LessThanLogicExpression(attr, valueArray.length - 1)
       case GreaterThan(attr, value) =>
         val field = catalog.getField(attr)
         if (field != null) {

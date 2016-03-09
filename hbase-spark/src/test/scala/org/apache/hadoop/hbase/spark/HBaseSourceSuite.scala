@@ -52,7 +52,7 @@ object IntKeyRecord {
       i % 2 == 0,
       i.toDouble,
       i.toFloat,
-      i,
+      if (i % 2 == 0) i else -i,
       i.toLong,
       i.toShort,
       s"String$i extra",
@@ -133,13 +133,13 @@ class HBaseSourceSuite extends FunSuite with
     val df = withCatalog(writeCatalog)
     df.registerTempTable("table0")
     val c = sqlContext.sql("select count(1) from table0").rdd.collect()(0)(0).asInstanceOf[Long]
-    assert(c == 256)
+    assert(c === 256)
   }
 
   test("full query") {
     val df = withCatalog(writeCatalog)
     df.show
-    assert(df.count() == 256)
+    assert(df.count() === 256)
   }
 
   test("filtered query0") {
@@ -150,7 +150,7 @@ class HBaseSourceSuite extends FunSuite with
     val s = df.filter($"col0" <= "row005")
       .select("col0", "col1")
     s.show
-    assert(s.count() == 6)
+    assert(s.count() === 6)
   }
 
 */
@@ -187,14 +187,23 @@ class HBaseSourceSuite extends FunSuite with
   test("typeTable full query") {
     val df = withCatalog(catalog)
     df.show
-    assert(df.count() == 32)
+    assert(df.count() === 32)
   }
 
-  test("typeTable less than 0") {
+  test("typeTable rowkey less than 0") {
     val sql = sqlContext
     import sql.implicits._
     val df = withCatalog(catalog)
     val s = df.filter($"col0" < 0)
+    s.show
+    assert(s.count() === 16)
+  }
+
+  test("typeTable col less than 0") {
+    val sql = sqlContext
+    import sql.implicits._
+    val df = withCatalog(catalog)
+    val s = df.filter($"col4" < 0)
     s.show
     assert(s.count() === 16)
   }
@@ -206,7 +215,7 @@ class HBaseSourceSuite extends FunSuite with
     val df = withCatalog(catalog)
     val s = df.filter($"col0" <= -10)
     s.show
-    assert(s.count() == 11)
+    assert(s.count() === 11)
   }
 
   test("typeTable lessequal than -9") {
@@ -215,7 +224,7 @@ class HBaseSourceSuite extends FunSuite with
     val df = withCatalog(catalog)
     val s = df.filter($"col0" <= -9)
     s.show
-    assert(s.count() == 12)
+    assert(s.count() === 12)
   }
 
   test("typeTable greaterequal than -9") {
@@ -224,7 +233,7 @@ class HBaseSourceSuite extends FunSuite with
     val df = withCatalog(catalog)
     val s = df.filter($"col0" >= -9)
     s.show
-    assert(s.count() == 21)
+    assert(s.count() === 21)
   }
 
   test("typeTable greaterequal  than 0") {
@@ -233,7 +242,7 @@ class HBaseSourceSuite extends FunSuite with
     val df = withCatalog(catalog)
     val s = df.filter($"col0" >= 0)
     s.show
-    assert(s.count() == 16)
+    assert(s.count() === 16)
   }
 
   test("typeTable greater than 10") {
@@ -242,7 +251,7 @@ class HBaseSourceSuite extends FunSuite with
     val df = withCatalog(catalog)
     val s = df.filter($"col0" > 10)
     s.show
-    assert(s.count() == 10)
+    assert(s.count() === 10)
   }*/
   test("typeTable and") {
     val sql = sqlContext
@@ -250,7 +259,7 @@ class HBaseSourceSuite extends FunSuite with
     val df = withCatalog(catalog)
     val s = df.filter($"col0" > -10 && $"col0" <= 10)
     s.show
-    assert(s.count() == 11)
+    assert(s.count() === 11)
   }
 
   test("or") {
@@ -259,7 +268,7 @@ class HBaseSourceSuite extends FunSuite with
     val df = withCatalog(catalog)
     val s = df.filter($"col0" <= -10 || $"col0" > 10)
     s.show
-    assert(s.count() == 21)
+    assert(s.count() === 21)
   }
 /*
   test("typeTable all") {
@@ -268,7 +277,7 @@ class HBaseSourceSuite extends FunSuite with
     val df = withCatalog(catalog)
     val s = df.filter($"col0" >= -100)
     s.show
-    assert(s.count() == 32)
+    assert(s.count() === 32)
   }
 */
 }
