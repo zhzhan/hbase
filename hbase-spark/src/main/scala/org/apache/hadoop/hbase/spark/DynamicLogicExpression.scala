@@ -45,6 +45,7 @@ object FilterOps extends Enumeration {
   val UnknownEnc = nextCode
 
   def compare(c: Int, ops: FilterOps): Boolean = {
+    println(s"""compare $c, $ops""")
     ops match {
       case Greater =>  c > 0
       case GreaterEqual =>  c >= 0
@@ -53,9 +54,9 @@ object FilterOps extends Enumeration {
     }
   }
 
-  def encode(field: Field,
+  def encode(dt: DataType,
              value: Any): Array[Byte] = {
-    field.dt match {
+    dt match {
       case BooleanType =>
         val result = new Array[Byte](Bytes.SIZEOF_BOOLEAN + 1)
         result(0) = BooleanEnc

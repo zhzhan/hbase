@@ -322,14 +322,15 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
       equals("( KEY_FIELD < 0 OR KEY_FIELD > 1 )"))
 
     assert(executionRules.rowKeyFilter.points.size == 0)
-    assert(executionRules.rowKeyFilter.ranges.size == 1)
-
+    assert(executionRules.rowKeyFilter.ranges.size == 2)
+/*
     val scanRange1 = executionRules.rowKeyFilter.ranges.get(0).get
+    println(s"scanRange1 $scanRange1")
     assert(Bytes.equals(scanRange1.lowerBound,Bytes.toBytes("")))
     assert(scanRange1.upperBound == null)
     assert(scanRange1.isLowerBoundEqualTo)
     assert(scanRange1.isUpperBoundEqualTo)
-
+*/
     assert(results.length == 5)
   }
 

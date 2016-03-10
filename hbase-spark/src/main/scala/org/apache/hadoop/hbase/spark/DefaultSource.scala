@@ -385,7 +385,7 @@ case class HBaseRelation (
     })
 
     val queryValueArray = queryValueList.toArray
-
+    println(s"""superRowKeyFilter: $superRowKeyFilter""")
     if (superRowKeyFilter == null) {
       superRowKeyFilter = new RowKeyFilter
     }
@@ -396,6 +396,7 @@ case class HBaseRelation (
   def transverseFilterTree(parentRowKeyFilter:RowKeyFilter,
                                   valueArray:mutable.MutableList[Array[Byte]],
                                   filter:Filter): DynamicLogicExpression = {
+    println(s"""filter = $filter""")
     filter match {
 
       case EqualTo(attr, value) =>
@@ -412,44 +413,46 @@ case class HBaseRelation (
         }
         new EqualLogicExpression(attr, valueArray.length - 1, false)
       case LessThan(attr, value) =>
-
         val field = catalog.getField(attr)
         if (field != null) {
           if (field.isRowKey) {
             val b = BoundRange(value)
-            val f = b.map(_.less.map(x =>
-              new RowKeyFilter(null,
-                new ScanRange(x.low, true, x.upper, true))))
-            val parent = new RowKeyFilter()
-            f.map { x =>
-              x.foldLeft(parent) { (i, j) =>
+            var inc = false
+            b.map(_.less.map { x =>
+              val r = new RowKeyFilter(null,
+                new ScanRange(x.upper, inc, x.low, true)
+              )
+              inc = true
+              r
+            }).map { x =>
+              x.tail.foldLeft(x.head) { (i, j) =>
                 i.mergeUnion(j)
               }
-            }
-            parentRowKeyFilter.mergeIntersect(parent)
+            }.map(parentRowKeyFilter.mergeIntersect(_))
           }
-          val byteValue = FilterOps.encode(field, value)
+          val byteValue = FilterOps.encode(field.dt, value)
           valueArray += byteValue
 
         }
-       // new PassThroughLogicExpression
         new LessThanLogicExpression(attr, valueArray.length - 1)
       case GreaterThan(attr, value) =>
         val field = catalog.getField(attr)
         if (field != null) {
           if (field.isRowKey) {
             val b = BoundRange(value)
-            val f = b.map(_.greater.map(x =>
-              new RowKeyFilter(null,
-                new ScanRange(x.low, true, x.upper, true))))
-            val parent = new RowKeyFilter()
-            f.map { x =>
-              x.foldLeft(parent) { (i, j) =>
+            var inc = false
+            b.map(_.greater.map{x =>
+              val r = new RowKeyFilter(null,
+                new ScanRange(x.upper, true, x.low, inc))
+              inc = true
+              r
+            }).map { x =>
+              x.tail.foldLeft(x.head) { (i, j) =>
                 i.mergeUnion(j)
               }
-            }
+            }.map(parentRowKeyFilter.mergeIntersect(_))
           }
-          val byteValue = FilterOps.encode(field, value)
+          val byteValue = FilterOps.encode(field.dt, value)
           valueArray += byteValue
         }
         new GreaterThanLogicExpression(attr, valueArray.length - 1)
@@ -458,17 +461,16 @@ case class HBaseRelation (
         if (field != null) {
           if (field.isRowKey) {
             val b = BoundRange(value)
-            val f = b.map(_.less.map(x =>
+            b.map(_.less.map(x =>
               new RowKeyFilter(null,
-                new ScanRange(x.low, true, x.upper, true))))
-            val parent = new RowKeyFilter()
-            f.map { x =>
-              x.foldLeft(parent) { (i, j) =>
-                i.mergeUnion(j)
-              }
-            }
+                new ScanRange(x.upper, true, x.low, true))))
+              .map { x =>
+                x.tail.foldLeft(x.head) { (i, j) =>
+                  i.mergeUnion(j)
+                }
+              }.map(parentRowKeyFilter.mergeIntersect(_))
           }
-          val byteValue = FilterOps.encode(field, value)
+          val byteValue = FilterOps.encode(field.dt, value)
           valueArray += byteValue
         }
         new LessThanOrEqualLogicExpression(attr, valueArray.length - 1)
@@ -477,17 +479,16 @@ case class HBaseRelation (
         if (field != null) {
           if (field.isRowKey) {
             val b = BoundRange(value)
-            val f = b.map(_.greater.map(x =>
+            b.map(_.greater.map(x =>
               new RowKeyFilter(null,
-                new ScanRange(x.low, true, x.upper, true))))
-            val parent = new RowKeyFilter()
-            f.map { x =>
-              x.foldLeft(parent) { (i, j) =>
-                i.mergeUnion(j)
-              }
-            }
+                new ScanRange(x.upper, true, x.low, true))))
+              .map { x =>
+                x.tail.foldLeft(x.head) { (i, j) =>
+                  i.mergeUnion(j)
+                }
+              }.map(parentRowKeyFilter.mergeIntersect(_))
           }
-          val byteValue = FilterOps.encode(field, value)
+          val byteValue = FilterOps.encode(field.dt, value)
           valueArray += byteValue
         }
         new GreaterThanOrEqualLogicExpression(attr, valueArray.length - 1)
@@ -612,9 +613,14 @@ class ScanRange(var upperBound:Array[Byte], var isUpperBoundEqualTo:Boolean,
 
     //Then see if leftRange goes to null or if leftRange.upperBound
     // upper is greater or equals to rightRange.lowerBound
-    if (leftRange.upperBound == null ||
-      Bytes.compareTo(leftRange.upperBound, rightRange.lowerBound) >= 0) {
-      new ScanRange(leftRange.upperBound, leftRange.isUpperBoundEqualTo, rightRange.lowerBound, rightRange.isLowerBoundEqualTo)
+    if (compareRange(leftRange.upperBound, rightRange.lowerBound) >= 0) {
+      if (compareRange(leftRange.upperBound, rightRange.upperBound) >=0) {
+        new ScanRange(rightRange.upperBound, rightRange.isUpperBoundEqualTo,
+          rightRange.lowerBound, rightRange.isLowerBoundEqualTo)
+      } else {
+      new ScanRange(leftRange.upperBound, leftRange.isUpperBoundEqualTo,
+        rightRange.lowerBound, rightRange.isLowerBoundEqualTo)
+      }
     } else {
       null
     }
@@ -649,10 +655,13 @@ class ScanRange(var upperBound:Array[Byte], var isUpperBoundEqualTo:Boolean,
         (!isUpperBoundEqualTo && upperCompare < 0))
 
   }
-  override def toString:String = {
+ /* override def toString:String = {
     "ScanRange:(upperBound:" + Bytes.toString(upperBound) +
       ",isUpperBoundEqualTo:" + isUpperBoundEqualTo + ",lowerBound:" +
       Bytes.toString(lowerBound) + ",isLowerBoundEqualTo:" + isLowerBoundEqualTo + ")"
+  }*/
+  override def toString: String = {
+    s"""ScanRange(${ if (upperBound != null && upperBound.size == 4) Bytes.toInt(upperBound) else null },$isUpperBoundEqualTo, ${if (lowerBound != null && lowerBound.size == 4) Bytes.toInt(lowerBound) else null }, $isLowerBoundEqualTo)""".stripMargin
   }
 }
 
@@ -1059,6 +1068,7 @@ class RowKeyFilter (currentPoint:Array[Byte] = null,
    * @param other Filter to merge
    */
   def mergeUnion(other:RowKeyFilter): RowKeyFilter = {
+    println(s"""mergeUnion $this $other""")
     other.points.foreach( p => points += p)
 
     other.ranges.foreach( otherR => {
@@ -1080,6 +1090,7 @@ class RowKeyFilter (currentPoint:Array[Byte] = null,
    * @param other Filter to merge
    */
   def mergeIntersect(other:RowKeyFilter): RowKeyFilter = {
+    println(s"""mergeIntersect $this $other""")
     val survivingPoints = new mutable.MutableList[Array[Byte]]()
     val didntSurviveFirstPassPoints = new mutable.MutableList[Array[Byte]]()
     if (points == null || points.length == 0) {
@@ -1142,7 +1153,7 @@ class RowKeyFilter (currentPoint:Array[Byte] = null,
     ranges.foreach( r => {
       if (isFirst) isFirst = false
       else strBuilder.append(",")
-      strBuilder.append(r)
+      strBuilder.append(r.toString)
     })
     strBuilder.append("))")
     strBuilder.toString()

@@ -21,6 +21,7 @@ import java.util
 
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.Logging
+import org.apache.spark.sql.types.IntegerType
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite}
 
 class DynamicLogicExpressionSuite  extends FunSuite with
@@ -35,16 +36,16 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
 
     columnToCurrentRowValueMap.put("Col1", new ByteArrayComparable(Bytes.toBytes(10)))
     val valueFromQueryValueArray = new Array[Array[Byte]](2)
-    valueFromQueryValueArray(0) = Bytes.toBytes(15)
-    valueFromQueryValueArray(1) = Bytes.toBytes(5)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 15)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 5)
     assert(andLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(10)
-    valueFromQueryValueArray(1) = Bytes.toBytes(5)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 10)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 5)
     assert(!andLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(15)
-    valueFromQueryValueArray(1) = Bytes.toBytes(10)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 15)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 10)
     assert(!andLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
     val expressionString = andLogic.toExpressionString
@@ -52,16 +53,16 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
     assert(expressionString.equals("( Col1 < 0 AND Col1 > 1 )"))
 
     val builtExpression = DynamicLogicExpressionBuilder.build(expressionString)
-    valueFromQueryValueArray(0) = Bytes.toBytes(15)
-    valueFromQueryValueArray(1) = Bytes.toBytes(5)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 15)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 5)
     assert(builtExpression.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(10)
-    valueFromQueryValueArray(1) = Bytes.toBytes(5)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 10)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 5)
     assert(!builtExpression.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(15)
-    valueFromQueryValueArray(1) = Bytes.toBytes(10)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 15)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 10)
     assert(!builtExpression.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
   }
@@ -75,20 +76,20 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
 
     columnToCurrentRowValueMap.put("Col1", new ByteArrayComparable(Bytes.toBytes(10)))
     val valueFromQueryValueArray = new Array[Array[Byte]](2)
-    valueFromQueryValueArray(0) = Bytes.toBytes(15)
-    valueFromQueryValueArray(1) = Bytes.toBytes(5)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 15)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 5)
     assert(OrLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(10)
-    valueFromQueryValueArray(1) = Bytes.toBytes(5)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 10)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 5)
     assert(OrLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(15)
-    valueFromQueryValueArray(1) = Bytes.toBytes(10)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 15)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 10)
     assert(OrLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(10)
-    valueFromQueryValueArray(1) = Bytes.toBytes(10)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 10)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 10)
     assert(!OrLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
     val expressionString = OrLogic.toExpressionString
@@ -96,20 +97,20 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
     assert(expressionString.equals("( Col1 < 0 OR Col1 > 1 )"))
 
     val builtExpression = DynamicLogicExpressionBuilder.build(expressionString)
-    valueFromQueryValueArray(0) = Bytes.toBytes(15)
-    valueFromQueryValueArray(1) = Bytes.toBytes(5)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 15)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 5)
     assert(builtExpression.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(10)
-    valueFromQueryValueArray(1) = Bytes.toBytes(5)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 10)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 5)
     assert(builtExpression.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(15)
-    valueFromQueryValueArray(1) = Bytes.toBytes(10)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 15)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 10)
     assert(builtExpression.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(10)
-    valueFromQueryValueArray(1) = Bytes.toBytes(10)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 10)
+    valueFromQueryValueArray(1) = FilterOps.encode(IntegerType, 10)
     assert(!builtExpression.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
   }
 
@@ -127,40 +128,40 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
     val valueFromQueryValueArray = new Array[Array[Byte]](1)
 
     //great than
-    valueFromQueryValueArray(0) = Bytes.toBytes(10)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 10)
     assert(!greaterLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(20)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 20)
     assert(!greaterLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
     //great than and equal
-    valueFromQueryValueArray(0) = Bytes.toBytes(5)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 5)
     assert(greaterAndEqualLogic.execute(columnToCurrentRowValueMap,
       valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(10)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 10)
     assert(greaterAndEqualLogic.execute(columnToCurrentRowValueMap,
       valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(20)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 20)
     assert(!greaterAndEqualLogic.execute(columnToCurrentRowValueMap,
       valueFromQueryValueArray))
 
     //less than
-    valueFromQueryValueArray(0) = Bytes.toBytes(10)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 10)
     assert(!lessLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(5)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 5)
     assert(!lessLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
     //less than and equal
-    valueFromQueryValueArray(0) = Bytes.toBytes(20)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 20)
     assert(lessAndEqualLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(20)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 20)
     assert(lessAndEqualLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
-    valueFromQueryValueArray(0) = Bytes.toBytes(10)
+    valueFromQueryValueArray(0) = FilterOps.encode(IntegerType, 10)
     assert(lessAndEqualLogic.execute(columnToCurrentRowValueMap, valueFromQueryValueArray))
 
     //equal too

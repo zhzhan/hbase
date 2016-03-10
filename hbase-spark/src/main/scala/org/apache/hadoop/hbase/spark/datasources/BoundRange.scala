@@ -51,8 +51,8 @@ object BoundRange extends Logging{
       } else {
         Some(BoundRanges(
           Array(BoundRange(Bytes.toBytes(Integer.MIN_VALUE), b)),
-          Array(BoundRange(Bytes.toBytes(0: Int), Bytes.toBytes(Integer.MAX_VALUE)),
-            BoundRange(b, Bytes.toBytes(-1: Integer))), b))
+          Array(BoundRange(b, Bytes.toBytes(-1: Integer)),
+            BoundRange(Bytes.toBytes(0: Int), Bytes.toBytes(Integer.MAX_VALUE))), b))
       }
     case a: Long =>
       val b =  Bytes.toBytes(a)
@@ -64,8 +64,8 @@ object BoundRange extends Logging{
       } else {
         Some(BoundRanges(
           Array(BoundRange(Bytes.toBytes(Long.MinValue), b)),
-          Array(BoundRange(Bytes.toBytes(0: Long), Bytes.toBytes(Long.MaxValue)),
-            BoundRange(b, Bytes.toBytes(-1: Long))), b))
+          Array(BoundRange(b, Bytes.toBytes(-1: Long)),
+            BoundRange(Bytes.toBytes(0: Long), Bytes.toBytes(Long.MaxValue))), b))
       }
     case a: Short =>
       val b =  Bytes.toBytes(a)
@@ -77,8 +77,8 @@ object BoundRange extends Logging{
       } else {
         Some(BoundRanges(
           Array(BoundRange(Bytes.toBytes(Short.MinValue), b)),
-          Array(BoundRange(Bytes.toBytes(0: Short), Bytes.toBytes(Short.MaxValue)),
-            BoundRange(b, Bytes.toBytes(-1: Short))), b))
+          Array(BoundRange(b, Bytes.toBytes(-1: Short)),
+            BoundRange(Bytes.toBytes(0: Short), Bytes.toBytes(Short.MaxValue))), b))
       }
     // For both double and float, the order of positive number is consistent
     // with byte array order. But the order of negative number is the reverse
@@ -94,8 +94,8 @@ object BoundRange extends Logging{
       } else {
         Some(BoundRanges(
           Array(BoundRange(b, Bytes.toBytes(Double.MinValue))),
-          Array(BoundRange(Bytes.toBytes(0.0d), Bytes.toBytes(Double.MaxValue)),
-            BoundRange(Bytes.toBytes(-0.0d), b)), b))
+          Array(BoundRange(Bytes.toBytes(-0.0d), b),
+            BoundRange(Bytes.toBytes(0.0d), Bytes.toBytes(Double.MaxValue))), b))
       }
     case a: Float =>
       val b =  Bytes.toBytes(a)
@@ -107,28 +107,28 @@ object BoundRange extends Logging{
       } else {
         Some(BoundRanges(
           Array(BoundRange(b, Bytes.toBytes(Float.MinValue))),
-          Array( BoundRange(Bytes.toBytes(0.0f), Bytes.toBytes(Float.MaxValue)),
-            BoundRange(Bytes.toBytes(-0.0f), b)), b))
+          Array(BoundRange(Bytes.toBytes(-0.0f), b),
+            BoundRange(Bytes.toBytes(0.0f), Bytes.toBytes(Float.MaxValue))), b))
       }
     case a: Array[Byte] =>
       Some(BoundRanges(
-        Array(BoundRange(Array.fill(a.length)(ByteMin), a)),
-        Array(BoundRange(a, Array.fill(a.length)(ByteMax))), a))
+        Array(BoundRange(new Array[Byte](0), a)),
+        Array(BoundRange(a, null)), a))
     case a: Byte =>
       val b =  Array(a)
       Some(BoundRanges(
-        Array(BoundRange(Array(ByteMin), b)),
-        Array(BoundRange(b, Array(ByteMax))), b))
+        Array(BoundRange( new Array[Byte](0), b)),
+        Array(BoundRange(b, null)), b))
     case a: String =>
       val b =  Bytes.toBytes(a)
       Some(BoundRanges(
-        Array(BoundRange(Array.fill(a.length)(ByteMin), b)),
-        Array(BoundRange(b, Array.fill(a.length)(ByteMax))), b))
+        Array(BoundRange(new Array[Byte](0), b)),
+        Array(BoundRange(b, null)), b))
     case a: UTF8String =>
       val b = a.getBytes
       Some(BoundRanges(
-        Array(BoundRange(Array.fill(a.numBytes())(ByteMin), b)),
-        Array(BoundRange(b, Array.fill(a.numBytes())(ByteMax))), b))
+        Array(BoundRange(new Array[Byte](0), b)),
+        Array(BoundRange(b, null)), b))
     case _ => None
   }
 }
