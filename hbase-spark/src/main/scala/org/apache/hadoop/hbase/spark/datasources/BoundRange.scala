@@ -112,23 +112,23 @@ object BoundRange extends Logging{
       }
     case a: Array[Byte] =>
       Some(BoundRanges(
-        Array(BoundRange(new Array[Byte](0), a)),
-        Array(BoundRange(a, null)), a))
+        Array(BoundRange(bytesMin, a)),
+        Array(BoundRange(a, bytesMax)), a))
     case a: Byte =>
       val b =  Array(a)
       Some(BoundRanges(
-        Array(BoundRange( new Array[Byte](0), b)),
-        Array(BoundRange(b, null)), b))
+        Array(BoundRange(bytesMin, b)),
+        Array(BoundRange(b, bytesMax)), b))
     case a: String =>
       val b =  Bytes.toBytes(a)
       Some(BoundRanges(
-        Array(BoundRange(new Array[Byte](0), b)),
-        Array(BoundRange(b, null)), b))
+        Array(BoundRange(bytesMin, b)),
+        Array(BoundRange(b, bytesMax)), b))
     case a: UTF8String =>
       val b = a.getBytes
       Some(BoundRanges(
-        Array(BoundRange(new Array[Byte](0), b)),
-        Array(BoundRange(b, null)), b))
+        Array(BoundRange(bytesMin, b)),
+        Array(BoundRange(b, bytesMax)), b))
     case _ => None
   }
 }

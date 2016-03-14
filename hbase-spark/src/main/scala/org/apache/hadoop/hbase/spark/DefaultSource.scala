@@ -425,7 +425,7 @@ case class HBaseRelation (
               inc = true
               r
             }).map { x =>
-              x.tail.foldLeft(x.head) { (i, j) =>
+              x.reduce { (i, j) =>
                 i.mergeUnion(j)
               }
             }.map(parentRowKeyFilter.mergeIntersect(_))
@@ -447,7 +447,7 @@ case class HBaseRelation (
               inc = true
               r
             }).map { x =>
-              x.tail.foldLeft(x.head) { (i, j) =>
+              x.reduce { (i, j) =>
                 i.mergeUnion(j)
               }
             }.map(parentRowKeyFilter.mergeIntersect(_))
@@ -465,7 +465,7 @@ case class HBaseRelation (
               new RowKeyFilter(null,
                 new ScanRange(x.upper, true, x.low, true))))
               .map { x =>
-                x.tail.foldLeft(x.head) { (i, j) =>
+                x.reduce{ (i, j) =>
                   i.mergeUnion(j)
                 }
               }.map(parentRowKeyFilter.mergeIntersect(_))
@@ -483,7 +483,7 @@ case class HBaseRelation (
               new RowKeyFilter(null,
                 new ScanRange(x.upper, true, x.low, true))))
               .map { x =>
-                x.tail.foldLeft(x.head) { (i, j) =>
+                x.reduce { (i, j) =>
                   i.mergeUnion(j)
                 }
               }.map(parentRowKeyFilter.mergeIntersect(_))
