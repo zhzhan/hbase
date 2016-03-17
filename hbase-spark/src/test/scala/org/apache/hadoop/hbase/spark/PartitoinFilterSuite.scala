@@ -179,6 +179,7 @@ class PartitionFilterSuite extends FunSuite with
     s.show
     assert(s.count() === 10)
   }
+
   test("rangeTable and") {
     val sql = sqlContext
     import sql.implicits._
@@ -205,5 +206,4 @@ class PartitionFilterSuite extends FunSuite with
     s.show
     assert(s.count() === 32)
   }
-
 }
